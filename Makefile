@@ -10,7 +10,7 @@ build:
 
 deploy:
 	make build
-	sam deploy --guided --no-fail-on-empty-changeset --no-confirm-changeset --region eu-west-1 --profile personal --stack-name tracker-test --template-file ./deployment/tracker.yml
+	sam deploy --guided --no-fail-on-empty-changeset --no-confirm-changeset --region eu-west-1 --profile personal --stack-name web-observer-test --template-file ./deployment/observer.yml
 
 test:
 	go test ./... -v
