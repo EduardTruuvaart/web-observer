@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+##########################################################################
+#  Parameters                                                            #
+##########################################################################
+Parameters:
+  TelegramApiKey:
+    Type: String
+  GBApiKey:
+    Type: String
+
+##########################################################################
+#  Global values that are applied to all resources                       #
+##########################################################################
+Globals:
+  Function:
+    MemorySize: 512
+    Architectures: ["arm64"]
+    Runtime: provided.al2
+    Timeout: 29
+    Layers:
+      - !Sub arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension-Arm64:1
+
+Resources:
+##########################################################################
+#   Lambda Functions                                                     #
+##########################################################################
+  # BotHandlerLogs:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     RetentionInDays: 1
+  #     LogGroupName: !Sub "/aws/lambda/web-observer-handler-${AWS::StackName}"
+
+  # BotHandlerFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: !Sub ev-bot-handler-${AWS::StackName}
+  #     FunctionUrlConfig:
+  #       AuthType: NONE
+  #     CodeUri: ../build/bot.zip
+  #     Handler: main
+  #     Policies:
+  #       - AWSLambdaBasicExecutionRole
+  #       - DynamoDBCrudPolicy:
+  #           TableName: StationAvailability
+  #     Environment:
+  #       Variables:
+  #         TELEGRAM_BOT_TOKEN: !Ref TelegramApiKey
+  #         APIKEY: !Ref GBApiKey
+  #   DependsOn:
+  #     - BotHandlerLogs
+    
+  # ChargeStationTrackerLogs:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     RetentionInDays: 1
+  #     LogGroupName: !Sub "/aws/lambda/ev-chargestation-tracker-${AWS::StackName}"
+
+  # ChargeStationTrackerFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: !Sub ev-chargestation-tracker-${AWS::StackName}
+  #     CodeUri: ../build/tracker.zip
+  #     Handler: main
+  #     Timeout: 900
+  #     Policies:
+  #       - AWSLambdaBasicExecutionRole
+  #       - DynamoDBCrudPolicy:
+  #           TableName: StationAvailability
+  #     Environment:
+  #       Variables:
+  #         TELEGRAM_BOT_TOKEN: !Ref TelegramApiKey
+  #         APIKEY: !Ref GBApiKey
+  #     Events:
+  #       TriggerSchedule:
+  #         Type: Schedule
+  #         Properties:
+  #           Schedule: rate(5 minutes)
+  #           Name: !Sub tracker-trigger-${AWS::StackName}
+  #           Description: tracker schedule
+  #           Enabled: True
+
+  #   DependsOn:
+  #     - ChargeStationTrackerLogs
+
+##########################################################################
+#   DynamoDb Tables                                                      #
+##########################################################################
+  JobsTrackerTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Content
+      AttributeDefinitions:
+        - AttributeName: URL
+          AttributeType: S
+      KeySchema:
+        - AttributeName: URL
+          KeyType: HASH
+      BillingMode: PROVISIONED
+      ProvisionedThroughput: 
+        ReadCapacityUnits: "1"
+        WriteCapacityUnits: "1"
