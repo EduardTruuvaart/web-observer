@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -20,6 +21,10 @@ func (m *MockedContentRepository) FindByID(ctx context.Context, url string) (*do
 	args := m.Called(ctx, url)
 	return args.Get(0).(*domain.Content), args.Error(1)
 }
+func (m *MockedContentRepository) Save(ctx context.Context, content domain.Content) error {
+	args := m.Called(ctx, content)
+	return args.Error(0)
+}
 
 func TestFetchAndCompareWithIdenticalStringsThenResultEqualsUnchanged(t *testing.T) {
 	// Arrange
@@ -28,13 +33,15 @@ func TestFetchAndCompareWithIdenticalStringsThenResultEqualsUnchanged(t *testing
 		w.Write([]byte("<html><body>My content</body></html>"))
 	}))
 
+	data, _ := base64.StdEncoding.Strict().DecodeString("H4sIAAAAAAAA/7LJKMnNsbNJyk+ptPOtVEjOzytJzSux0QcL2OiDZQEBAAD///fZaEQkAAAA")
 	dbContent := &domain.Content{
-		Data:     "<html><body>My content</body></html>",
+		Data:     data,
 		URL:      fmt.Sprintf("%s/my-endpoint", mockServer.URL),
 		IsActive: true,
 	}
 	mockedTrackingRepository := new(MockedContentRepository)
 	mockedTrackingRepository.On("FindByID", mock.Anything, mock.Anything).Return(dbContent, nil)
+	mockedTrackingRepository.On("Save", mock.Anything, mock.Anything).Return(nil)
 
 	httpClient := &http.Client{}
 	contentFetcher := NewContentFetcher(mockedTrackingRepository, httpClient)
@@ -56,13 +63,15 @@ func TestFetchAndCompareWithDifferentStringsThenResultEqualsUpdated(t *testing.T
 		w.Write([]byte("<html><body><span>In Stock</span>My content</body></html>"))
 	}))
 
+	data, _ := base64.StdEncoding.Strict().DecodeString("H4sIAAAAAAAA/7LJKMnNsbNJyk+ptPOtVEjOzytJzSux0QcL2OiDZQEBAAD///fZaEQkAAAA")
 	dbContent := &domain.Content{
-		Data:     "<html><body><span>Out of stock</span>My content</body></html>",
+		Data:     data,
 		URL:      fmt.Sprintf("%s/my-endpoint", mockServer.URL),
 		IsActive: true,
 	}
 	mockedTrackingRepository := new(MockedContentRepository)
 	mockedTrackingRepository.On("FindByID", mock.Anything, mock.Anything).Return(dbContent, nil)
+	mockedTrackingRepository.On("Save", mock.Anything, mock.Anything).Return(nil)
 
 	httpClient := &http.Client{}
 	contentFetcher := NewContentFetcher(mockedTrackingRepository, httpClient)

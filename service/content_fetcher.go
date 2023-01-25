@@ -9,6 +9,7 @@ import (
 
 	"github.com/EduardTruuvaart/web-observer/domain"
 	"github.com/EduardTruuvaart/web-observer/repository"
+	"github.com/EduardTruuvaart/web-observer/service/compressor"
 	"golang.org/x/net/html"
 )
 
@@ -50,7 +51,35 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string) (*doma
 		return nil, err
 	}
 
-	previousHTML, _ := html.Parse(strings.NewReader(savedResult.Data))
+	if savedResult == nil {
+		compressedData, err := compressor.Compress([]byte(data))
+
+		if err != nil {
+			return nil, err
+		}
+
+		content := domain.Content{
+			URL:      url,
+			Data:     compressedData,
+			IsActive: true,
+		}
+		err = c.contentRepository.Save(ctx, content)
+
+		if err != nil {
+			return nil, err
+		}
+
+		result := domain.NewContentIsAdded
+		return &result, nil
+	}
+
+	decompressedData, err := compressor.Decompress(savedResult.Data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	previousHTML, _ := html.Parse(strings.NewReader(string(decompressedData)))
 	latestHTML, _ := html.Parse(strings.NewReader(data))
 
 	if reflect.DeepEqual(previousHTML, latestHTML) {
@@ -60,5 +89,4 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string) (*doma
 
 	result := domain.Updated
 	return &result, nil
-
 }

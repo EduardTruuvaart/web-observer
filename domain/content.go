@@ -2,6 +2,6 @@ package domain
 
 type Content struct {
 	URL      string
-	Data     string
+	Data     []byte
 	IsActive bool
 }

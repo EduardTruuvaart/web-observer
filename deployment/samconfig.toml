@@ -1,0 +1,13 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "web-observer-test"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1upj0qc3lew2r"
+s3_prefix = "web-observer-test"
+region = "eu-west-1"
+profile = "personal"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "TelegramApiKey=\"\" GBApiKey=\"\""
+image_repositories = []
