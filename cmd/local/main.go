@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -27,9 +28,11 @@ func main() {
 
 	url := "https://eu.store.ui.com/collections/unifi-protect-cameras/products/g4-doorbell-pro"
 
-	_, err = contentFetcher.FetchAndCompare(ctx, url)
+	result, err := contentFetcher.FetchAndCompare(ctx, url)
 
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	fmt.Printf("Result: %v\n", result)
 }

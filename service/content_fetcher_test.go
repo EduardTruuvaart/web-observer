@@ -50,9 +50,8 @@ func TestFetchAndCompareWithIdenticalStringsThenResultEqualsUnchanged(t *testing
 	result, err := contentFetcher.FetchAndCompare(context.TODO(), fmt.Sprintf("%s/my-endpoint", mockServer.URL))
 
 	// Assert
-	expectedValue := domain.Unchanged
 	assert.Nil(t, err)
-	assert.Equal(t, &expectedValue, result)
+	assert.Equal(t, domain.Unchanged, result)
 
 }
 
@@ -80,8 +79,7 @@ func TestFetchAndCompareWithDifferentStringsThenResultEqualsUpdated(t *testing.T
 	result, err := contentFetcher.FetchAndCompare(context.TODO(), fmt.Sprintf("%s/my-endpoint", mockServer.URL))
 
 	// Assert
-	expectedValue := domain.Updated
 	assert.Nil(t, err)
-	assert.Equal(t, &expectedValue, result)
+	assert.Equal(t, domain.Updated, result)
 
 }
