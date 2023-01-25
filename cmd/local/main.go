@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 
 	"github.com/EduardTruuvaart/web-observer/repository"
 	"github.com/EduardTruuvaart/web-observer/service"
@@ -20,7 +21,15 @@ func main() {
 	}
 
 	db := *dynamodb.NewFromConfig(cfg)
-
+	httpClient := &http.Client{}
 	contentRepository := repository.NewDynamoContentRepository(db)
-	contentFetcher := service.NewContentFetcher(contentRepository)
+	contentFetcher := service.NewContentFetcher(contentRepository, httpClient)
+
+	url := "https://eu.store.ui.com/collections/unifi-protect-cameras/products/g4-doorbell-pro"
+
+	_, err = contentFetcher.FetchAndCompare(ctx, url)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 }

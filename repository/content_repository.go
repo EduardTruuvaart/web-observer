@@ -10,7 +10,7 @@ import (
 const tableName = "Content"
 
 type ContentRepository interface {
-	FindByID(ctx context.Context) (*domain.Content, error)
+	FindByID(ctx context.Context, url string) (*domain.Content, error)
 }
 
 type DynamoContentRepository struct {
@@ -23,6 +23,6 @@ func NewDynamoContentRepository(db dynamodb.Client) *DynamoContentRepository {
 	}
 }
 
-func (r *DynamoContentRepository) FindByID(ctx context.Context) (*domain.Content, error) {
+func (r *DynamoContentRepository) FindByID(ctx context.Context, url string) (*domain.Content, error) {
 	panic("not implemented")
 }
