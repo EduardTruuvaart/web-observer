@@ -1,9 +1,9 @@
 package domain
 
-type FetchResult string
+type FetchState string
 
 const (
-	Updated           FetchResult = "UPDATED"
-	Unchanged         FetchResult = "UNCHANGED"
-	NewContentIsAdded FetchResult = "NEW_CONTENT_IS_ADDED"
+	Updated           FetchState = "UPDATED"
+	Unchanged         FetchState = "UNCHANGED"
+	NewContentIsAdded FetchState = "NEW_CONTENT_IS_ADDED"
 )
