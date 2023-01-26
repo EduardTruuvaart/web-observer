@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/EduardTruuvaart/web-observer/domain"
 	"github.com/EduardTruuvaart/web-observer/repository"
 	"github.com/EduardTruuvaart/web-observer/service"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -34,5 +35,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Result: %v\n", result)
+	fmt.Printf("Result: %v\n", result.State)
+	if result.State == domain.Updated {
+		fmt.Printf("Difference: %s\n", result.Difference)
+	}
 }

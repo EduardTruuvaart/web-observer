@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"html"
 	"io/ioutil"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"github.com/EduardTruuvaart/web-observer/domain"
 	"github.com/EduardTruuvaart/web-observer/repository"
 	"github.com/EduardTruuvaart/web-observer/service/compressor"
+	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 type ContentFetcher struct {
@@ -34,6 +36,7 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string) (domai
 	resp, err := c.httpClient.Do(req)
 
 	if err != nil {
+		fmt.Printf("Got error calling httpClient.Do: %s\n", err)
 		return domain.FetchResult{}, err
 	}
 
@@ -42,11 +45,13 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string) (domai
 	data := string(body)
 
 	if err != nil {
+		fmt.Printf("Got error calling ioutil.ReadAll: %s\n", err)
 		return domain.FetchResult{}, err
 	}
 
 	savedResult, err := c.contentRepository.FindByID(ctx, url)
 	if err != nil {
+		fmt.Printf("Got error calling contentRepository.FindByID: %s\n", err)
 		return domain.FetchResult{}, err
 	}
 
@@ -54,6 +59,7 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string) (domai
 		err = c.saveLatestContent(ctx, url, data, true)
 
 		if err != nil {
+			fmt.Printf("Got error calling saveLatestContent: %s\n", err)
 			return domain.FetchResult{}, err
 		}
 
@@ -65,6 +71,7 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string) (domai
 	decompressedData, err := compressor.Decompress(savedResult.Data)
 
 	if err != nil {
+		fmt.Printf("Got error calling Decompress: %s\n", err)
 		return domain.FetchResult{}, err
 	}
 
@@ -80,18 +87,50 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string) (domai
 	err = c.saveLatestContent(ctx, url, data, true)
 
 	if err != nil {
+		fmt.Printf("Got error calling saveLatestContent 2: %s\n", err)
 		return domain.FetchResult{
 			State: domain.Updated,
 		}, err
 	}
 
+	// var cfg = &htmldiff.Config{
+	// 	Granularity:  5,
+	// 	InsertedSpan: []htmldiff.Attribute{{Key: "style", Val: "background-color: palegreen;"}},
+	// 	DeletedSpan:  []htmldiff.Attribute{{Key: "style", Val: "background-color: lightpink;"}},
+	// 	ReplacedSpan: []htmldiff.Attribute{{Key: "style", Val: "background-color: lightskyblue;"}},
+	// 	CleanTags:    []string{""},
+	// }
+	// res, err := cfg.HTMLdiff([]string{string(decompressedData), data})
+
+	// if err != nil {
+	// 	fmt.Printf("Got error calling HTMLdiff: %s\n", err)
+	// 	return domain.FetchResult{
+	// 		State: domain.Updated,
+	// 	}, err
+	// }
+
+	// mergedHTML := res[0]
+	// fmt.Println(mergedHTML)
+
+	dmp := diffmatchpatch.New()
+	diffs := dmp.DiffMain(string(decompressedData), data, false)
+	fmt.Println(len(diffs))
+	diffString := ""
+	for _, diff := range diffs {
+		diffString += fmt.Sprintf("%s\n", diff.Text)
+	}
+
 	return domain.FetchResult{
-		State: domain.Updated,
+		State:      domain.Updated,
+		Difference: diffString,
+		DiffSize:   len(diffs),
 	}, nil
 }
 
 func (c *ContentFetcher) saveLatestContent(ctx context.Context, url string, data string, isActive bool) error {
 	compressedData, err := compressor.Compress([]byte(data))
+
+	//fmt.Printf("Compressed data size: %dkb\n", len(compressedData)/1024)
 
 	if err != nil {
 		return err
