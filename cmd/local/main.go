@@ -37,6 +37,7 @@ func main() {
 
 	fmt.Printf("Result: %v\n", result.State)
 	if result.State == domain.Updated {
-		fmt.Printf("Difference: %s\n", result.Difference)
+		fmt.Printf("Diff size: %v\n", result.DiffSize)
+		//fmt.Printf("Difference: %s\n", result.Difference)
 	}
 }

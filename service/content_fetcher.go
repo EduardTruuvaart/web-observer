@@ -11,7 +11,7 @@ import (
 	"github.com/EduardTruuvaart/web-observer/domain"
 	"github.com/EduardTruuvaart/web-observer/repository"
 	"github.com/EduardTruuvaart/web-observer/service/compressor"
-	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/EduardTruuvaart/web-observer/service/htmldiff"
 )
 
 type ContentFetcher struct {
@@ -93,31 +93,18 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string) (domai
 		}, err
 	}
 
-	// var cfg = &htmldiff.Config{
-	// 	Granularity:  5,
-	// 	InsertedSpan: []htmldiff.Attribute{{Key: "style", Val: "background-color: palegreen;"}},
-	// 	DeletedSpan:  []htmldiff.Attribute{{Key: "style", Val: "background-color: lightpink;"}},
-	// 	ReplacedSpan: []htmldiff.Attribute{{Key: "style", Val: "background-color: lightskyblue;"}},
-	// 	CleanTags:    []string{""},
-	// }
-	// res, err := cfg.HTMLdiff([]string{string(decompressedData), data})
+	diffs, err := htmldiff.CompareDocumentSection(string(decompressedData), data, "body")
 
-	// if err != nil {
-	// 	fmt.Printf("Got error calling HTMLdiff: %s\n", err)
-	// 	return domain.FetchResult{
-	// 		State: domain.Updated,
-	// 	}, err
-	// }
+	if err != nil {
+		fmt.Printf("Got error comparing html documents: %s\n", err)
+		return domain.FetchResult{
+			State: domain.Updated,
+		}, err
+	}
 
-	// mergedHTML := res[0]
-	// fmt.Println(mergedHTML)
-
-	dmp := diffmatchpatch.New()
-	diffs := dmp.DiffMain(string(decompressedData), data, false)
-	fmt.Println(len(diffs))
 	diffString := ""
 	for _, diff := range diffs {
-		diffString += fmt.Sprintf("%s\n", diff.Text)
+		diffString += fmt.Sprintf("%s\n", diff)
 	}
 
 	return domain.FetchResult{
