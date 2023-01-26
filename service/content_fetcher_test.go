@@ -51,7 +51,7 @@ func TestFetchAndCompareWithIdenticalStringsThenResultEqualsUnchanged(t *testing
 
 	// Assert
 	assert.Nil(t, err)
-	assert.Equal(t, domain.Unchanged, result)
+	assert.Equal(t, domain.Unchanged, result.State)
 
 }
 
@@ -80,6 +80,6 @@ func TestFetchAndCompareWithDifferentStringsThenResultEqualsUpdated(t *testing.T
 
 	// Assert
 	assert.Nil(t, err)
-	assert.Equal(t, domain.Updated, result)
+	assert.Equal(t, domain.Updated, result.State)
 
 }
