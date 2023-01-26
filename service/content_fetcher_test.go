@@ -47,7 +47,7 @@ func TestFetchAndCompareWithIdenticalStringsThenResultEqualsUnchanged(t *testing
 	contentFetcher := NewContentFetcher(mockedTrackingRepository, httpClient)
 
 	// Act
-	result, err := contentFetcher.FetchAndCompare(context.TODO(), fmt.Sprintf("%s/my-endpoint", mockServer.URL))
+	result, err := contentFetcher.FetchAndCompare(context.TODO(), fmt.Sprintf("%s/my-endpoint", mockServer.URL), "body > span")
 
 	// Assert
 	assert.Nil(t, err)
@@ -76,7 +76,7 @@ func TestFetchAndCompareWithDifferentStringsThenResultEqualsUpdated(t *testing.T
 	contentFetcher := NewContentFetcher(mockedTrackingRepository, httpClient)
 
 	// Act
-	result, err := contentFetcher.FetchAndCompare(context.TODO(), fmt.Sprintf("%s/my-endpoint", mockServer.URL))
+	result, err := contentFetcher.FetchAndCompare(context.TODO(), fmt.Sprintf("%s/my-endpoint", mockServer.URL), "body > span")
 
 	// Assert
 	assert.Nil(t, err)
