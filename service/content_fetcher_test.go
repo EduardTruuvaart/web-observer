@@ -30,10 +30,10 @@ func TestFetchAndCompareWithIdenticalStringsThenResultEqualsUnchanged(t *testing
 	// Arrange
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(200)
-		w.Write([]byte("<html><body>My content</body></html>"))
+		w.Write([]byte("<html><body><span>Out of Stock</span>My content</body></html>"))
 	}))
 
-	data, _ := base64.StdEncoding.Strict().DecodeString("H4sIAAAAAAAA/7LJKMnNsbNJyk+ptPOtVEjOzytJzSux0QcL2OiDZQEBAAD///fZaEQkAAAA")
+	data, _ := base64.StdEncoding.Strict().DecodeString("H4sIAAAAAAAA/7LJKMnNsbNJyk+ptLMpLkjMs/MvLVHIT1MILslPzrbRBwv5Viok5+eVpOaV2OhDVOqDtQECAAD//1Jq3a09AAAA")
 	dbContent := &domain.Content{
 		Data:     data,
 		URL:      fmt.Sprintf("%s/my-endpoint", mockServer.URL),
@@ -62,7 +62,7 @@ func TestFetchAndCompareWithDifferentStringsThenResultEqualsUpdated(t *testing.T
 		w.Write([]byte("<html><body><span>In Stock</span>My content</body></html>"))
 	}))
 
-	data, _ := base64.StdEncoding.Strict().DecodeString("H4sIAAAAAAAA/7LJKMnNsbNJyk+ptPOtVEjOzytJzSux0QcL2OiDZQEBAAD///fZaEQkAAAA")
+	data, _ := base64.StdEncoding.Strict().DecodeString("H4sIAAAAAAAA/7LJKMnNsbNJyk+ptLMpLkjMs/MvLVHIT1MILslPzrbRBwv5Viok5+eVpOaV2OhDVOqDtQECAAD//1Jq3a09AAAA")
 	dbContent := &domain.Content{
 		Data:     data,
 		URL:      fmt.Sprintf("%s/my-endpoint", mockServer.URL),
