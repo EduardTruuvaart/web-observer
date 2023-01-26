@@ -28,13 +28,13 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string) (domai
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 
 	if err != nil {
-		return domain.Unchanged, err
+		return domain.FetchResult{}, err
 	}
 
 	resp, err := c.httpClient.Do(req)
 
 	if err != nil {
-		return domain.Unchanged, err
+		return domain.FetchResult{}, err
 	}
 
 	defer resp.Body.Close()
@@ -42,47 +42,52 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string) (domai
 	data := string(body)
 
 	if err != nil {
-		return domain.Unchanged, err
+		return domain.FetchResult{}, err
 	}
 
 	savedResult, err := c.contentRepository.FindByID(ctx, url)
 	if err != nil {
-		return domain.Unchanged, err
+		return domain.FetchResult{}, err
 	}
 
 	if savedResult == nil {
 		err = c.saveLatestContent(ctx, url, data, true)
 
 		if err != nil {
-			return domain.Unchanged, err
+			return domain.FetchResult{}, err
 		}
 
-		result := domain.NewContentIsAdded
-		return result, nil
+		return domain.FetchResult{
+			State: domain.NewContentIsAdded,
+		}, nil
 	}
 
 	decompressedData, err := compressor.Decompress(savedResult.Data)
 
 	if err != nil {
-		return domain.Unchanged, err
+		return domain.FetchResult{}, err
 	}
 
 	escapedData := html.EscapeString(data)
 	escapedPreviousData := html.EscapeString(string(decompressedData))
 
 	if strings.Compare(escapedData, escapedPreviousData) == 0 {
-		result := domain.Unchanged
-		return result, nil
+		return domain.FetchResult{
+			State: domain.Unchanged,
+		}, nil
 	}
 
 	err = c.saveLatestContent(ctx, url, data, true)
 
 	if err != nil {
-		return domain.Updated, err
+		return domain.FetchResult{
+			State: domain.Updated,
+		}, err
 	}
 
-	result := domain.Updated
-	return result, nil
+	return domain.FetchResult{
+		State: domain.Updated,
+	}, nil
 }
 
 func (c *ContentFetcher) saveLatestContent(ctx context.Context, url string, data string, isActive bool) error {
