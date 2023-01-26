@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/EduardTruuvaart/web-observer/domain"
@@ -76,6 +77,7 @@ func (r *DynamoContentRepository) Save(ctx context.Context, content domain.Conte
 	_, err := r.db.PutItem(ctx, &input)
 
 	if err != nil {
+		fmt.Printf("Got error calling PutItem: %s\n", err)
 		return err
 	}
 
