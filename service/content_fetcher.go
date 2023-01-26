@@ -26,7 +26,7 @@ func NewContentFetcher(contentRepository repository.ContentRepository, httpClien
 	}
 }
 
-func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string) (domain.FetchResult, error) {
+func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSelector string) (domain.FetchResult, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 
 	if err != nil {
@@ -56,7 +56,7 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string) (domai
 	}
 
 	if savedResult == nil {
-		err = c.saveLatestContent(ctx, url, data, true)
+		err = c.saveLatestContent(ctx, url, data, cssSelector, true)
 
 		if err != nil {
 			fmt.Printf("Got error calling saveLatestContent: %s\n", err)
@@ -84,7 +84,7 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string) (domai
 		}, nil
 	}
 
-	err = c.saveLatestContent(ctx, url, data, true)
+	err = c.saveLatestContent(ctx, url, data, cssSelector, true)
 
 	if err != nil {
 		fmt.Printf("Got error calling saveLatestContent 2: %s\n", err)
@@ -114,7 +114,7 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string) (domai
 	}, nil
 }
 
-func (c *ContentFetcher) saveLatestContent(ctx context.Context, url string, data string, isActive bool) error {
+func (c *ContentFetcher) saveLatestContent(ctx context.Context, url, data, cssSelector string, isActive bool) error {
 	compressedData, err := compressor.Compress([]byte(data))
 
 	//fmt.Printf("Compressed data size: %dkb\n", len(compressedData)/1024)
@@ -124,9 +124,10 @@ func (c *ContentFetcher) saveLatestContent(ctx context.Context, url string, data
 	}
 
 	content := domain.Content{
-		URL:      url,
-		Data:     compressedData,
-		IsActive: isActive,
+		URL:         url,
+		Data:        compressedData,
+		CssSelector: cssSelector,
+		IsActive:    isActive,
 	}
 	err = c.contentRepository.Save(ctx, content)
 
