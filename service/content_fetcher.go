@@ -2,15 +2,14 @@ package service
 
 import (
 	"context"
+	"html"
 	"io/ioutil"
 	"net/http"
-	"reflect"
 	"strings"
 
 	"github.com/EduardTruuvaart/web-observer/domain"
 	"github.com/EduardTruuvaart/web-observer/repository"
 	"github.com/EduardTruuvaart/web-observer/service/compressor"
-	"golang.org/x/net/html"
 )
 
 type ContentFetcher struct {
@@ -68,10 +67,10 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string) (domai
 		return domain.Unchanged, err
 	}
 
-	previousHTML, _ := html.Parse(strings.NewReader(string(decompressedData)))
-	latestHTML, _ := html.Parse(strings.NewReader(data))
+	escapedData := html.EscapeString(data)
+	escapedPreviousData := html.EscapeString(string(decompressedData))
 
-	if reflect.DeepEqual(previousHTML, latestHTML) {
+	if strings.Compare(escapedData, escapedPreviousData) == 0 {
 		result := domain.Unchanged
 		return result, nil
 	}
