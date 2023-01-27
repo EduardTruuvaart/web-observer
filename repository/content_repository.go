@@ -43,6 +43,8 @@ func (r *DynamoContentRepository) FindByID(ctx context.Context, url string) (*do
 		return nil, err
 	}
 
+	fmt.Printf("GetItem consumed units: %d\n", result.ConsumedCapacity.CapacityUnits)
+
 	if len(result.Item) == 0 {
 		return nil, nil
 	}
@@ -74,12 +76,14 @@ func (r *DynamoContentRepository) Save(ctx context.Context, content domain.Conte
 		},
 	}
 
-	_, err := r.db.PutItem(ctx, &input)
+	result, err := r.db.PutItem(ctx, &input)
 
 	if err != nil {
 		fmt.Printf("Got error calling PutItem: %s\n", err)
 		return err
 	}
+
+	fmt.Printf("PutItem consumed units: %d\n", result.ConsumedCapacity.CapacityUnits)
 
 	return nil
 }

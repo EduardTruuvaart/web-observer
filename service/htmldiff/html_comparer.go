@@ -4,61 +4,39 @@ import (
 	"fmt"
 	"strings"
 
+	domain "github.com/EduardTruuvaart/web-observer/domain/htmlcompare"
 	"github.com/PuerkitoBio/goquery"
 )
 
-func CompareWholeDocument(html1, html2 string) ([]string, error) {
+func CompareDocumentSection(sorceHtml, targetHtml, cssSelector string) (domain.HtmlCompareResult, error) {
 	var differences []string
+	var result domain.HtmlCompareResult
 
-	doc1, err := goquery.NewDocumentFromReader(strings.NewReader(html1))
+	doc1, err := goquery.NewDocumentFromReader(strings.NewReader(sorceHtml))
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
-	doc2, err := goquery.NewDocumentFromReader(strings.NewReader(html2))
+	doc2, err := goquery.NewDocumentFromReader(strings.NewReader(targetHtml))
 	if err != nil {
-		return nil, err
-	}
-
-	// Compare the elements, attributes, and text content of both HTML documents
-	doc1.Find("*").Each(func(i int, s *goquery.Selection) {
-		el1 := s.Get(0)
-
-		// Find the corresponding element in the second HTML document
-		el2 := doc2.Find(el1.DataAtom.String()).Eq(i)
-
-		// Compare the attributes
-		for _, attr := range el1.Attr {
-			if attr2, exists := el2.Attr(attr.Key); !exists || attr.Val != attr2 {
-				differences = append(differences, fmt.Sprintf("Attribute %s: %s != %s", attr.Key, attr.Val, attr2))
-			}
-		}
-
-		// Compare the text content
-		if s.Text() != el2.Text() {
-			differences = append(differences, fmt.Sprintf("text content: %s != %s", s.Text(), el2.Text()))
-		}
-	})
-
-	return differences, nil
-}
-
-func CompareDocumentSection(html1, html2, cssSelector string) ([]string, error) {
-	var differences []string
-
-	doc1, err := goquery.NewDocumentFromReader(strings.NewReader(html1))
-	if err != nil {
-		return nil, err
-	}
-
-	doc2, err := goquery.NewDocumentFromReader(strings.NewReader(html2))
-	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	// Find the section in both HTML documents
 	doc1Section := doc1.Find(cssSelector)
 	doc2Section := doc2.Find(cssSelector)
+
+	if doc1Section.Length() == 0 {
+		return domain.HtmlCompareResult{
+			State: domain.SelectionNotFoundInSource,
+		}, nil
+	}
+
+	if doc2Section.Length() == 0 {
+		return domain.HtmlCompareResult{
+			State: domain.SelectionNotFoundInTarget,
+		}, nil
+	}
 
 	// Compare the attributes
 	doc1Section.Each(func(i int, s *goquery.Selection) {
@@ -77,5 +55,15 @@ func CompareDocumentSection(html1, html2, cssSelector string) ([]string, error) 
 		}
 	})
 
-	return differences, nil
+	if len(differences) == 0 {
+		return domain.HtmlCompareResult{
+			State: domain.Identical,
+		}, nil
+	}
+
+	return domain.HtmlCompareResult{
+		State:       domain.Different,
+		DiffSize:    len(differences),
+		Differences: differences,
+	}, nil
 }

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/EduardTruuvaart/web-observer/domain"
+	htmlcompareresult "github.com/EduardTruuvaart/web-observer/domain/htmlcompare"
 	"github.com/EduardTruuvaart/web-observer/repository"
 	"github.com/EduardTruuvaart/web-observer/service/compressor"
 	"github.com/EduardTruuvaart/web-observer/service/htmldiff"
@@ -93,7 +94,7 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSel
 		}, err
 	}
 
-	diffs, err := htmldiff.CompareDocumentSection(string(decompressedData), data, "body")
+	result, err := htmldiff.CompareDocumentSection(string(decompressedData), data, "body")
 
 	if err != nil {
 		fmt.Printf("Got error comparing html documents: %s\n", err)
@@ -103,14 +104,24 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSel
 	}
 
 	diffString := ""
-	for _, diff := range diffs {
-		diffString += fmt.Sprintf("%s\n", diff)
+	if result.State == htmlcompareresult.SelectionNotFoundInSource {
+		diffString = "Selection not found in source"
+	}
+
+	if result.State == htmlcompareresult.SelectionNotFoundInTarget {
+		diffString = "Selection not found in target"
+	}
+
+	if result.State == htmlcompareresult.Different {
+		for _, diff := range result.Differences {
+			diffString += fmt.Sprintf("%s\n", diff)
+		}
 	}
 
 	return domain.FetchResult{
 		State:      domain.Updated,
 		Difference: diffString,
-		DiffSize:   len(diffs),
+		DiffSize:   result.DiffSize,
 	}, nil
 }
 

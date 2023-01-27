@@ -3,6 +3,7 @@ package htmldiff
 import (
 	"testing"
 
+	domain "github.com/EduardTruuvaart/web-observer/domain/htmlcompare"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +17,7 @@ func TestCompareDocumentSectionCompareIdenticalSections(t *testing.T) {
 
 	// Assert
 	assert.Nil(t, err)
-	assert.Equal(t, 0, len(result))
+	assert.Equal(t, domain.Identical, result.State)
 
 }
 
@@ -30,8 +31,9 @@ func TestCompareDocumentSectionCompareDifferentSectionsWithDifferntText(t *testi
 
 	// Assert
 	assert.Nil(t, err)
-	assert.Equal(t, 1, len(result))
-	assert.Contains(t, result, "text content: Out of Stock != In Stock")
+	assert.Equal(t, domain.Different, result.State)
+	assert.Equal(t, 1, result.DiffSize)
+	assert.Contains(t, result.Differences, "text content: Out of Stock != In Stock")
 }
 
 func TestCompareDocumentSectionCompareDifferentSectionsWithDifferntClassAndText(t *testing.T) {
@@ -44,7 +46,22 @@ func TestCompareDocumentSectionCompareDifferentSectionsWithDifferntClassAndText(
 
 	// Assert
 	assert.Nil(t, err)
-	assert.Equal(t, 2, len(result))
-	assert.Contains(t, result, "attribute class: product-soldout != product-instock")
-	assert.Contains(t, result, "text content: Out of Stock != In Stock")
+	assert.Equal(t, domain.Different, result.State)
+	assert.Equal(t, 2, result.DiffSize)
+	assert.Contains(t, result.Differences, "attribute class: product-soldout != product-instock")
+	assert.Contains(t, result.Differences, "text content: Out of Stock != In Stock")
+}
+
+func TestCompareDocumentSectionContentHasChangedCompletleyThenChangeIsDetected(t *testing.T) {
+	// Arrange
+	doc1 := `<html><body><div class="product-title"><span class="product-soldout">Out of Stock</span>My content</div></body></html>`
+	doc2 := `<html><body><div class="description"><b>Some content</b>Data</div></body></html>`
+
+	// Act
+	result, err := CompareDocumentSection(doc1, doc2, "div.product-title > span")
+
+	// Assert
+	assert.Nil(t, err)
+	assert.Equal(t, domain.SelectionNotFoundInTarget, result.State)
+	assert.Equal(t, 0, result.DiffSize)
 }
