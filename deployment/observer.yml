@@ -9,6 +9,9 @@ Parameters:
     Type: String
   GBApiKey:
     Type: String
+  BucketName:
+    Type: String
+    Default: wev-observer-bucket
 
 ##########################################################################
 #  Global values that are applied to all resources                       #
@@ -20,7 +23,7 @@ Globals:
     Runtime: provided.al2
     Timeout: 29
     Layers:
-      - !Sub arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension-Arm64:1
+      - !Sub arn:aws:lambda:eu-west-1:580247275435:layer:LambdaInsightsExtension-Arm64:2
 
 Resources:
 ##########################################################################
@@ -85,19 +88,51 @@ Resources:
   #     - ChargeStationTrackerLogs
 
 ##########################################################################
-#   DynamoDb Tables                                                      #
+#   S3 Bucket                                                      #
 ##########################################################################
-  JobsTrackerTable:
-    Type: AWS::DynamoDB::Table
+  InputBucket:
+    Type: AWS::S3::Bucket
     Properties:
-      TableName: Content
-      AttributeDefinitions:
-        - AttributeName: URL
-          AttributeType: S
-      KeySchema:
-        - AttributeName: URL
-          KeyType: HASH
-      BillingMode: PROVISIONED
-      ProvisionedThroughput: 
-        ReadCapacityUnits: "1"
-        WriteCapacityUnits: "1"
+      BucketName: wev-observer-bucket
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins:
+              - '*'
+            AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - GET
+              - POST
+            MaxAge: 3000
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteLifeCyclePolicy
+            Status: Enabled
+            ExpirationInDays: 30
+    
+  InputBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    DependsOn: InputBucket
+    Properties:
+      Bucket: !Ref InputBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: web-observer-policy
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+            Principal:
+              Service: 
+                - lambda.amazonaws.com
+            Resource:
+              - !Sub "arn:aws:s3:::${BucketName}"
+              - !Sub "arn:aws:s3:::${BucketName}/*"
+
+Outputs:
+  InputBucket:
+    Value: 
+      Ref: InputBucket
+    Export: 
+      Name: !Sub s3-bucket-${AWS::StackName}
