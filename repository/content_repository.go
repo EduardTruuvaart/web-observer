@@ -35,6 +35,8 @@ func (r *DynamoContentRepository) FindByID(ctx context.Context, url string) (*do
 		Key: map[string]types.AttributeValue{
 			"URL": &types.AttributeValueMemberS{Value: url},
 		},
+		ConsistentRead:         aws.Bool(false),
+		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,
 	}
 
 	result, err := r.db.GetItem(ctx, params)
@@ -43,7 +45,7 @@ func (r *DynamoContentRepository) FindByID(ctx context.Context, url string) (*do
 		return nil, err
 	}
 
-	fmt.Printf("GetItem consumed units: %d\n", result.ConsumedCapacity.CapacityUnits)
+	fmt.Printf("PutItem consumed units: %d\n", result.ConsumedCapacity.CapacityUnits)
 
 	if len(result.Item) == 0 {
 		return nil, nil
@@ -74,6 +76,7 @@ func (r *DynamoContentRepository) Save(ctx context.Context, content domain.Conte
 			"IsActive":    &types.AttributeValueMemberBOOL{Value: content.IsActive},
 			"UpdatedDate": &types.AttributeValueMemberS{Value: formattedDate},
 		},
+		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,
 	}
 
 	result, err := r.db.PutItem(ctx, &input)

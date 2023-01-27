@@ -3,10 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
-	"html"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
 	"github.com/EduardTruuvaart/web-observer/domain"
 	htmlcompareresult "github.com/EduardTruuvaart/web-observer/domain/htmlcompare"
@@ -76,15 +74,6 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSel
 		return domain.FetchResult{}, err
 	}
 
-	escapedData := html.EscapeString(data)
-	escapedPreviousData := html.EscapeString(string(decompressedData))
-
-	if strings.Compare(escapedData, escapedPreviousData) == 0 {
-		return domain.FetchResult{
-			State: domain.Unchanged,
-		}, nil
-	}
-
 	err = c.saveLatestContent(ctx, url, data, cssSelector, true)
 
 	if err != nil {
@@ -94,13 +83,19 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSel
 		}, err
 	}
 
-	result, err := htmldiff.CompareDocumentSection(string(decompressedData), data, "body")
+	result, err := htmldiff.CompareDocumentSection(string(decompressedData), data, cssSelector)
 
 	if err != nil {
 		fmt.Printf("Got error comparing html documents: %s\n", err)
 		return domain.FetchResult{
 			State: domain.Updated,
 		}, err
+	}
+
+	if result.State == htmlcompareresult.Identical {
+		return domain.FetchResult{
+			State: domain.Unchanged,
+		}, nil
 	}
 
 	diffString := ""
@@ -128,7 +123,7 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSel
 func (c *ContentFetcher) saveLatestContent(ctx context.Context, url, data, cssSelector string, isActive bool) error {
 	compressedData, err := compressor.Compress([]byte(data))
 
-	//fmt.Printf("Compressed data size: %dkb\n", len(compressedData)/1024)
+	fmt.Printf("Compressed data size: %dkb\n", len(compressedData)/1024)
 
 	if err != nil {
 		return err
