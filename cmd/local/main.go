@@ -29,7 +29,7 @@ func main() {
 
 	url := "https://eu.store.ui.com/collections/unifi-protect-cameras/products/g4-doorbell-pro"
 
-	result, err := contentFetcher.FetchAndCompare(ctx, url)
+	result, err := contentFetcher.FetchAndCompare(ctx, url, "div.comProduct__title--wrapper > div > span")
 
 	if err != nil {
 		log.Fatal(err)
@@ -38,6 +38,6 @@ func main() {
 	fmt.Printf("Result: %v\n", result.State)
 	if result.State == domain.Updated {
 		fmt.Printf("Diff size: %v\n", result.DiffSize)
-		//fmt.Printf("Difference: %s\n", result.Difference)
+		fmt.Printf("Difference: %s\n", result.Difference)
 	}
 }
