@@ -88,6 +88,24 @@ Resources:
   #     - ChargeStationTrackerLogs
 
 ##########################################################################
+#   DynamoDb Tables                                                      #
+##########################################################################
+  JobsTrackerTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Content
+      AttributeDefinitions:
+        - AttributeName: URL
+          AttributeType: S
+      KeySchema:
+        - AttributeName: URL
+          KeyType: HASH
+      BillingMode: PROVISIONED
+      ProvisionedThroughput: 
+        ReadCapacityUnits: "1"
+        WriteCapacityUnits: "1"
+
+##########################################################################
 #   S3 Bucket                                                      #
 ##########################################################################
   InputBucket:

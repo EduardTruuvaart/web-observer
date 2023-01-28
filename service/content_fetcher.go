@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/md5"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -40,6 +41,10 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSel
 	}
 
 	defer resp.Body.Close()
+	urlHash := md5.Sum([]byte(url))
+
+	fmt.Printf("URL hash: %x\n", urlHash)
+
 	body, err := ioutil.ReadAll(resp.Body)
 	data := string(body)
 
