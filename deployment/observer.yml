@@ -58,13 +58,6 @@ Resources:
           TELEGRAM_BOT_TOKEN: !Ref TelegramApiKey
           APIKEY: !Ref GBApiKey
       Events:
-        TriggerSchedule:
-          Type: Schedule
-          Properties:
-            Schedule: rate(5 minutes)
-            Name: !Sub web-observer-${AWS::StackName}
-            Description: tracker schedule
-            Enabled: True
         ObserverSchedule:
           Type: ScheduleV2
           Properties:
@@ -72,7 +65,7 @@ Resources:
             ScheduleExpression: rate(5 minutes)
             ScheduleExpressionTimezone: Europe/London
             State: ENABLED
-            Name: observer-schedule-${AWS::StackName}
+            Name: ObserverSchedule
     DependsOn:
       - WebObserverTrackerLogs
 
@@ -116,26 +109,6 @@ Resources:
           - Id: DeleteLifeCyclePolicy
             Status: Enabled
             ExpirationInDays: 30
-    
-  InputBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    DependsOn: InputBucket
-    Properties:
-      Bucket: !Ref InputBucket
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Sid: web-observer-policy
-            Effect: Allow
-            Action:
-              - s3:GetObject
-              - s3:PutObject
-            Principal:
-              Service: 
-                - lambda.amazonaws.com
-            Resource:
-              - !Sub "arn:aws:s3:::${BucketName}"
-              - !Sub "arn:aws:s3:::${BucketName}/*"
 
 Outputs:
   InputBucket:
