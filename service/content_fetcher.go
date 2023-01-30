@@ -54,31 +54,17 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSel
 		return domain.FetchResult{}, err
 	}
 
-	if savedResult == nil {
-		err = c.saveLatestContent(ctx, url, data, cssSelector, true)
-
-		if err != nil {
-			fmt.Printf("Got error calling saveLatestContent: %s\n", err)
-			return domain.FetchResult{}, err
-		}
-
-		return domain.FetchResult{
-			State: domain.NewContentIsAdded,
-		}, nil
-	}
-
-	if err != nil {
-		fmt.Printf("Got error calling Decompress: %s\n", err)
-		return domain.FetchResult{}, err
-	}
-
 	err = c.saveLatestContent(ctx, url, data, cssSelector, true)
 
 	if err != nil {
-		fmt.Printf("Got error calling saveLatestContent 2: %s\n", err)
+		fmt.Printf("Got error calling saveLatestContent: %s\n", err)
+		return domain.FetchResult{}, err
+	}
+
+	if savedResult == nil {
 		return domain.FetchResult{
-			State: domain.Updated,
-		}, err
+			State: domain.NewContentIsAdded,
+		}, nil
 	}
 
 	result, err := htmldiff.CompareDocumentSection(string(savedResult.Data), data, cssSelector)
