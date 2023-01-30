@@ -29,8 +29,10 @@ type DynamoContentRepository struct {
 
 func NewDynamoContentRepository(db dynamodb.Client, s3Client s3.Client, dynamoTableName string, s3BucketName string) *DynamoContentRepository {
 	return &DynamoContentRepository{
-		db:       db,
-		s3Client: s3Client,
+		db:              db,
+		s3Client:        s3Client,
+		dynamoTableName: dynamoTableName,
+		s3BucketName:    s3BucketName,
 	}
 }
 
