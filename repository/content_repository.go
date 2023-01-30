@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
+	"io/ioutil"
 	"time"
 
 	"github.com/EduardTruuvaart/web-observer/domain"
@@ -77,7 +78,7 @@ func (r *DynamoContentRepository) FindByID(ctx context.Context, url string) (*do
 		return nil, err
 	}
 
-	_, err = s3Result.Body.Read(content.Data)
+	content.Data, err = ioutil.ReadAll(s3Result.Body)
 
 	if err != nil {
 		fmt.Printf("Got error reading bytes from s3 Body: %s\n", err)

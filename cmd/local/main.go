@@ -26,7 +26,7 @@ func main() {
 	db := *dynamodb.NewFromConfig(cfg)
 	s3Client := *s3.NewFromConfig(cfg)
 	httpClient := &http.Client{}
-	contentRepository := repository.NewDynamoContentRepository(db, s3Client, "ObserverTraces", "wev-observer-bucket")
+	contentRepository := repository.NewDynamoContentRepository(db, s3Client, "ObserverTraces", "web-observer-bucket")
 	contentFetcher := service.NewContentFetcher(contentRepository, httpClient)
 
 	url := "https://eu.store.ui.com/collections/unifi-protect-cameras/products/g4-doorbell-pro"

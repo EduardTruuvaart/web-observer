@@ -11,7 +11,7 @@ Parameters:
     Type: String
   BucketName:
     Type: String
-    Default: wev-observer-bucket
+    Default: web-observer-bucket
 
 ##########################################################################
 #  Global values that are applied to all resources                       #
@@ -111,7 +111,7 @@ Resources:
   InputBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: wev-observer-bucket
+      BucketName: web-observer-bucket
       CorsConfiguration:
         CorsRules:
           - AllowedOrigins:
