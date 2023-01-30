@@ -93,7 +93,7 @@ Resources:
   JobsTrackerTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: Content
+      TableName: ObserverTraces
       AttributeDefinitions:
         - AttributeName: URL
           AttributeType: S

@@ -17,11 +17,11 @@ type MockedContentRepository struct {
 	mock.Mock
 }
 
-func (m *MockedContentRepository) FindByID(ctx context.Context, url string) (*domain.Content, error) {
+func (m *MockedContentRepository) FindByID(ctx context.Context, url string) (*domain.ObserverTrace, error) {
 	args := m.Called(ctx, url)
-	return args.Get(0).(*domain.Content), args.Error(1)
+	return args.Get(0).(*domain.ObserverTrace), args.Error(1)
 }
-func (m *MockedContentRepository) Save(ctx context.Context, content domain.Content) error {
+func (m *MockedContentRepository) Save(ctx context.Context, content domain.ObserverTrace) error {
 	args := m.Called(ctx, content)
 	return args.Error(0)
 }
@@ -34,10 +34,9 @@ func TestFetchAndCompareWithIdenticalStringsThenResultEqualsUnchanged(t *testing
 	}))
 
 	data, _ := base64.StdEncoding.Strict().DecodeString("H4sIAAAAAAAA/7LJKMnNsbNJyk+ptLMpLkjMs/MvLVHIT1MILslPzrbRBwv5Viok5+eVpOaV2OhDVOqDtQECAAD//1Jq3a09AAAA")
-	dbContent := &domain.Content{
-		Data:     data,
-		URL:      fmt.Sprintf("%s/my-endpoint", mockServer.URL),
-		IsActive: true,
+	dbContent := &domain.ObserverTrace{
+		Data: data,
+		URL:  fmt.Sprintf("%s/my-endpoint", mockServer.URL),
 	}
 	mockedTrackingRepository := new(MockedContentRepository)
 	mockedTrackingRepository.On("FindByID", mock.Anything, mock.Anything).Return(dbContent, nil)
@@ -63,10 +62,9 @@ func TestFetchAndCompareWithDifferentStringsThenResultEqualsUpdated(t *testing.T
 	}))
 
 	data, _ := base64.StdEncoding.Strict().DecodeString("H4sIAAAAAAAA/7LJKMnNsbNJyk+ptLMpLkjMs/MvLVHIT1MILslPzrbRBwv5Viok5+eVpOaV2OhDVOqDtQECAAD//1Jq3a09AAAA")
-	dbContent := &domain.Content{
-		Data:     data,
-		URL:      fmt.Sprintf("%s/my-endpoint", mockServer.URL),
-		IsActive: true,
+	dbContent := &domain.ObserverTrace{
+		Data: data,
+		URL:  fmt.Sprintf("%s/my-endpoint", mockServer.URL),
 	}
 	mockedTrackingRepository := new(MockedContentRepository)
 	mockedTrackingRepository.On("FindByID", mock.Anything, mock.Anything).Return(dbContent, nil)

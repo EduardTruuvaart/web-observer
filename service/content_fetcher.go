@@ -134,11 +134,10 @@ func (c *ContentFetcher) saveLatestContent(ctx context.Context, url, data, cssSe
 		return err
 	}
 
-	content := domain.Content{
+	content := domain.ObserverTrace{
 		URL:         url,
 		Data:        compressedData,
 		CssSelector: cssSelector,
-		IsActive:    isActive,
 	}
 	err = c.contentRepository.Save(ctx, content)
 

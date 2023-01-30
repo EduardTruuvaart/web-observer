@@ -11,6 +11,7 @@ import (
 	"github.com/EduardTruuvaart/web-observer/service"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 func main() {
@@ -23,8 +24,9 @@ func main() {
 	}
 
 	db := *dynamodb.NewFromConfig(cfg)
+	s3Client := *s3.NewFromConfig(cfg)
 	httpClient := &http.Client{}
-	contentRepository := repository.NewDynamoContentRepository(db)
+	contentRepository := repository.NewDynamoContentRepository(db, s3Client, "ObserverTraces", "wev-observer-bucket")
 	contentFetcher := service.NewContentFetcher(contentRepository, httpClient)
 
 	url := "https://eu.store.ui.com/collections/unifi-protect-cameras/products/g4-doorbell-pro"
