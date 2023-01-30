@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"crypto/md5"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -10,7 +9,6 @@ import (
 	"github.com/EduardTruuvaart/web-observer/domain"
 	htmlcompareresult "github.com/EduardTruuvaart/web-observer/domain/htmlcompare"
 	"github.com/EduardTruuvaart/web-observer/repository"
-	"github.com/EduardTruuvaart/web-observer/service/compressor"
 	"github.com/EduardTruuvaart/web-observer/service/htmldiff"
 )
 
@@ -41,9 +39,6 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSel
 	}
 
 	defer resp.Body.Close()
-	urlHash := md5.Sum([]byte(url))
-
-	fmt.Printf("URL hash: %x\n", urlHash)
 
 	body, err := ioutil.ReadAll(resp.Body)
 	data := string(body)
@@ -72,8 +67,6 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSel
 		}, nil
 	}
 
-	decompressedData, err := compressor.Decompress(savedResult.Data)
-
 	if err != nil {
 		fmt.Printf("Got error calling Decompress: %s\n", err)
 		return domain.FetchResult{}, err
@@ -88,7 +81,7 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSel
 		}, err
 	}
 
-	result, err := htmldiff.CompareDocumentSection(string(decompressedData), data, cssSelector)
+	result, err := htmldiff.CompareDocumentSection(string(savedResult.Data), data, cssSelector)
 
 	if err != nil {
 		fmt.Printf("Got error comparing html documents: %s\n", err)
@@ -126,20 +119,12 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSel
 }
 
 func (c *ContentFetcher) saveLatestContent(ctx context.Context, url, data, cssSelector string, isActive bool) error {
-	compressedData, err := compressor.Compress([]byte(data))
-
-	fmt.Printf("Compressed data size: %dkb\n", len(compressedData)/1024)
-
-	if err != nil {
-		return err
-	}
-
 	content := domain.ObserverTrace{
 		URL:         url,
-		Data:        compressedData,
+		Data:        []byte(data),
 		CssSelector: cssSelector,
 	}
-	err = c.contentRepository.Save(ctx, content)
+	err := c.contentRepository.Save(ctx, content)
 
 	return err
 }
