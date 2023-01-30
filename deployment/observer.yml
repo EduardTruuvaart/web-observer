@@ -53,6 +53,8 @@ Resources:
             BucketName: !Ref BucketName
       Environment:
         Variables:
+          TABLE_NAME: !Ref DynamoTableName
+          BUCKET_NAME: !Ref BucketName
           TELEGRAM_BOT_TOKEN: !Ref TelegramApiKey
           APIKEY: !Ref GBApiKey
       Events:
