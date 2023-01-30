@@ -12,6 +12,9 @@ Parameters:
   BucketName:
     Type: String
     Default: web-observer-bucket
+  DynamoTableName:
+    Type: String
+    Default: ObserverTraces
 
 ##########################################################################
 #  Global values that are applied to all resources                       #
@@ -29,71 +32,55 @@ Resources:
 ##########################################################################
 #   Lambda Functions                                                     #
 ##########################################################################
-  # BotHandlerLogs:
-  #   Type: AWS::Logs::LogGroup
-  #   Properties:
-  #     RetentionInDays: 1
-  #     LogGroupName: !Sub "/aws/lambda/web-observer-handler-${AWS::StackName}"
+  WebObserverTrackerLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 1
+      LogGroupName: !Sub "/aws/lambda/web-observer-${AWS::StackName}"
 
-  # BotHandlerFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     FunctionName: !Sub ev-bot-handler-${AWS::StackName}
-  #     FunctionUrlConfig:
-  #       AuthType: NONE
-  #     CodeUri: ../build/bot.zip
-  #     Handler: main
-  #     Policies:
-  #       - AWSLambdaBasicExecutionRole
-  #       - DynamoDBCrudPolicy:
-  #           TableName: StationAvailability
-  #     Environment:
-  #       Variables:
-  #         TELEGRAM_BOT_TOKEN: !Ref TelegramApiKey
-  #         APIKEY: !Ref GBApiKey
-  #   DependsOn:
-  #     - BotHandlerLogs
-    
-  # ChargeStationTrackerLogs:
-  #   Type: AWS::Logs::LogGroup
-  #   Properties:
-  #     RetentionInDays: 1
-  #     LogGroupName: !Sub "/aws/lambda/ev-chargestation-tracker-${AWS::StackName}"
-
-  # ChargeStationTrackerFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     FunctionName: !Sub ev-chargestation-tracker-${AWS::StackName}
-  #     CodeUri: ../build/tracker.zip
-  #     Handler: main
-  #     Timeout: 900
-  #     Policies:
-  #       - AWSLambdaBasicExecutionRole
-  #       - DynamoDBCrudPolicy:
-  #           TableName: StationAvailability
-  #     Environment:
-  #       Variables:
-  #         TELEGRAM_BOT_TOKEN: !Ref TelegramApiKey
-  #         APIKEY: !Ref GBApiKey
-  #     Events:
-  #       TriggerSchedule:
-  #         Type: Schedule
-  #         Properties:
-  #           Schedule: rate(5 minutes)
-  #           Name: !Sub tracker-trigger-${AWS::StackName}
-  #           Description: tracker schedule
-  #           Enabled: True
-
-  #   DependsOn:
-  #     - ChargeStationTrackerLogs
+  WebObserverFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub web-observer-${AWS::StackName}
+      CodeUri: ../build/web-observer.zip
+      Handler: main
+      Timeout: 900
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoTableName
+        - S3CrudPolicy:
+            BucketName: !Ref BucketName
+      Environment:
+        Variables:
+          TELEGRAM_BOT_TOKEN: !Ref TelegramApiKey
+          APIKEY: !Ref GBApiKey
+      Events:
+        TriggerSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+            Name: !Sub web-observer-${AWS::StackName}
+            Description: tracker schedule
+            Enabled: True
+        ObserverSchedule:
+          Type: ScheduleV2
+          Properties:
+            Description: Observer schedule
+            ScheduleExpression: rate(5 minutes)
+            ScheduleExpressionTimezone: Europe/London
+            State: ENABLED
+            Name: observer-schedule-${AWS::StackName}
+    DependsOn:
+      - WebObserverTrackerLogs
 
 ##########################################################################
 #   DynamoDb Tables                                                      #
 ##########################################################################
-  JobsTrackerTable:
+  ObserverTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: ObserverTraces
+      TableName: !Ref DynamoTableName
       AttributeDefinitions:
         - AttributeName: URL
           AttributeType: S
@@ -111,7 +98,7 @@ Resources:
   InputBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: web-observer-bucket
+      BucketName: !Ref BucketName
       CorsConfiguration:
         CorsRules:
           - AllowedOrigins:
@@ -153,4 +140,9 @@ Outputs:
     Value: 
       Ref: InputBucket
     Export: 
-      Name: !Sub s3-bucket-${AWS::StackName}
+      Name: !Sub observer-bucket-${AWS::StackName}
+  ObserverTable:
+    Value: 
+      Ref: ObserverTable
+    Export: 
+      Name: !Sub observer-table-${AWS::StackName}
