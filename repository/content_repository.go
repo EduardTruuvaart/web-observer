@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"bytes"
 	"context"
+	"crypto/md5"
 	"fmt"
 	"time"
 
@@ -10,28 +12,31 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-const tableName = "Content"
-
 type ContentRepository interface {
-	FindByID(ctx context.Context, url string) (*domain.Content, error)
-	Save(ctx context.Context, content domain.Content) error
+	FindByID(ctx context.Context, url string) (*domain.ObserverTrace, error)
+	Save(ctx context.Context, content domain.ObserverTrace) error
 }
 
 type DynamoContentRepository struct {
-	db dynamodb.Client
+	db              dynamodb.Client
+	s3Client        s3.Client
+	dynamoTableName string
+	s3BucketName    string
 }
 
-func NewDynamoContentRepository(db dynamodb.Client) *DynamoContentRepository {
+func NewDynamoContentRepository(db dynamodb.Client, s3Client s3.Client, dynamoTableName string, s3BucketName string) *DynamoContentRepository {
 	return &DynamoContentRepository{
-		db: db,
+		db:       db,
+		s3Client: s3Client,
 	}
 }
 
-func (r *DynamoContentRepository) FindByID(ctx context.Context, url string) (*domain.Content, error) {
+func (r *DynamoContentRepository) FindByID(ctx context.Context, url string) (*domain.ObserverTrace, error) {
 	params := &dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
+		TableName: aws.String(r.dynamoTableName),
 		Key: map[string]types.AttributeValue{
 			"URL": &types.AttributeValueMemberS{Value: url},
 		},
@@ -42,16 +47,15 @@ func (r *DynamoContentRepository) FindByID(ctx context.Context, url string) (*do
 	result, err := r.db.GetItem(ctx, params)
 
 	if err != nil {
+		fmt.Printf("Got error calling dynamodb GetItem: %s\n", err)
 		return nil, err
 	}
-
-	fmt.Printf("PutItem consumed units: %d\n", result.ConsumedCapacity.CapacityUnits)
 
 	if len(result.Item) == 0 {
 		return nil, nil
 	}
 
-	var content *domain.Content = &domain.Content{}
+	var content *domain.ObserverTrace = &domain.ObserverTrace{}
 	opt := func(opt *attributevalue.DecoderOptions) {
 		opt.TagKey = "json"
 	}
@@ -61,32 +65,57 @@ func (r *DynamoContentRepository) FindByID(ctx context.Context, url string) (*do
 		return nil, err
 	}
 
+	s3Result, err := r.s3Client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(r.s3BucketName),
+		Key:    aws.String(content.FileName),
+	})
+
+	if err != nil {
+		fmt.Printf("Got error calling s3 GetObject: %s\n", err)
+		return nil, err
+	}
+
+	_, err = s3Result.Body.Read(content.Data)
+
+	if err != nil {
+		fmt.Printf("Got error reading bytes from s3 Body: %s\n", err)
+		return nil, err
+	}
+
 	return content, nil
 }
 
-func (r *DynamoContentRepository) Save(ctx context.Context, content domain.Content) error {
+func (r *DynamoContentRepository) Save(ctx context.Context, content domain.ObserverTrace) error {
 	now := time.Now().UTC()
 	formattedDate := now.Format(time.RFC3339)
+	content.FileName = fmt.Sprintf("%x.html", md5.Sum([]byte(content.URL)))
 
-	input := dynamodb.PutItemInput{
-		TableName: aws.String(tableName),
-		Item: map[string]types.AttributeValue{
-			"URL":         &types.AttributeValueMemberS{Value: content.URL},
-			"Data":        &types.AttributeValueMemberB{Value: content.Data},
-			"IsActive":    &types.AttributeValueMemberBOOL{Value: content.IsActive},
-			"UpdatedDate": &types.AttributeValueMemberS{Value: formattedDate},
-		},
-		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,
-	}
-
-	result, err := r.db.PutItem(ctx, &input)
-
+	reader := bytes.NewReader(content.Data)
+	_, err := r.s3Client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket: aws.String(r.s3BucketName),
+		Key:    aws.String(content.FileName),
+		Body:   reader,
+	})
 	if err != nil {
-		fmt.Printf("Got error calling PutItem: %s\n", err)
+		fmt.Printf("Got error calling s3 PutObject: %s\n", err)
 		return err
 	}
 
-	fmt.Printf("PutItem consumed units: %d\n", result.ConsumedCapacity.CapacityUnits)
+	input := dynamodb.PutItemInput{
+		TableName: aws.String(r.dynamoTableName),
+		Item: map[string]types.AttributeValue{
+			"URL":         &types.AttributeValueMemberS{Value: content.URL},
+			"UpdatedDate": &types.AttributeValueMemberS{Value: formattedDate},
+			"FileName":    &types.AttributeValueMemberS{Value: content.FileName},
+		},
+		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,
+	}
+	_, err = r.db.PutItem(ctx, &input)
+
+	if err != nil {
+		fmt.Printf("Got error calling dynamodb PutItem: %s\n", err)
+		return err
+	}
 
 	return nil
 }
