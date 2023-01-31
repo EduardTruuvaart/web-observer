@@ -16,3 +16,4 @@
 deployment/samconfig.toml
 build/web-observer.zip
 build/bot.zip
+.vscode/launch.json

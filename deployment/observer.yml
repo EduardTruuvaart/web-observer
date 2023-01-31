@@ -54,7 +54,7 @@ Resources:
         Variables:
           TELEGRAM_BOT_TOKEN: !Ref TelegramApiKey
     DependsOn:
-      - BotHandlerLogs
+      - ObserverBotHandlerLogs
 
   WebObserverTrackerLogs:
     Type: AWS::Logs::LogGroup
