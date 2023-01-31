@@ -7,6 +7,10 @@ build:
 	rm -rf bootstrap
 	mkdir -p build
 	mv web-observer.zip ./build/
+	GOARCH=arm64 GOOS=linux go build -ldflags "-s -w" -o bootstrap ./cmd/bot/lambda
+	zip bot.zip bootstrap
+	rm -rf bootstrap
+	mv bot.zip ./build/
 
 deploy:
 	make build

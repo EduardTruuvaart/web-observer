@@ -15,3 +15,4 @@
 # vendor/
 deployment/samconfig.toml
 build/web-observer.zip
+build/bot.zip
