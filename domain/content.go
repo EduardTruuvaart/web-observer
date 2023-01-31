@@ -5,4 +5,5 @@ type ObserverTrace struct {
 	FileName    string
 	Data        []byte
 	CssSelector string
+	IsActive    bool
 }

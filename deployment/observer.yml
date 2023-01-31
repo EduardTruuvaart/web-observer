@@ -7,8 +7,6 @@ Transform: AWS::Serverless-2016-10-31
 Parameters:
   TelegramApiKey:
     Type: String
-  GBApiKey:
-    Type: String
   BucketName:
     Type: String
     Default: web-observer-bucket
@@ -32,6 +30,32 @@ Resources:
 ##########################################################################
 #   Lambda Functions                                                     #
 ##########################################################################
+  ObserverBotHandlerLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 1
+      LogGroupName: !Sub "/aws/lambda/web-observer-bot-${AWS::StackName}"
+
+  ObserverBotHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub web-observer-bot-${AWS::StackName}
+      FunctionUrlConfig:
+        AuthType: NONE
+      CodeUri: ../build/bot.zip
+      Handler: main
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoTableName
+        - S3CrudPolicy:
+            BucketName: !Ref BucketName
+      Environment:
+        Variables:
+          TELEGRAM_BOT_TOKEN: !Ref TelegramApiKey
+    DependsOn:
+      - BotHandlerLogs
+
   WebObserverTrackerLogs:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -56,7 +80,6 @@ Resources:
           TABLE_NAME: !Ref DynamoTableName
           BUCKET_NAME: !Ref BucketName
           TELEGRAM_BOT_TOKEN: !Ref TelegramApiKey
-          APIKEY: !Ref GBApiKey
       Events:
         ObserverSchedule:
           Type: ScheduleV2
@@ -64,7 +87,7 @@ Resources:
             Description: Observer schedule
             ScheduleExpression: rate(5 minutes)
             ScheduleExpressionTimezone: Europe/London
-            State: ENABLED
+            State: DISABLED
             Name: ObserverSchedule
     DependsOn:
       - WebObserverTrackerLogs
@@ -79,9 +102,13 @@ Resources:
       AttributeDefinitions:
         - AttributeName: URL
           AttributeType: S
+        - AttributeName: ChatID
+          AttributeType: N
       KeySchema:
         - AttributeName: URL
           KeyType: HASH
+        - AttributeName: ChatID
+          KeyType: RANGE
       BillingMode: PROVISIONED
       ProvisionedThroughput: 
         ReadCapacityUnits: "1"
