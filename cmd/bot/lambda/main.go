@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	tgbotapi "gopkg.in/telegram-bot-api.v4"
 )
 
 var contentRepository *repository.DynamoContentRepository
@@ -32,20 +33,21 @@ func main() {
 }
 
 func handleRequest(c context.Context, request events.APIGatewayProxyRequest) (string, error) {
+	log.Println(request.Body)
 	// httpClient := &http.Client{}
 	// contentFetcher := service.NewContentFetcher(contentRepository, httpClient)
 
-	// bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_BOT_TOKEN"))
-	// if err != nil {
-	// 	log.Panic(err)
-	// }
+	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_BOT_TOKEN"))
+	if err != nil {
+		log.Panic(err)
+	}
 
-	// chatID := int64(000000000)
-	// msg := tgbotapi.NewMessage(chatID, "Hello World")
-	// _, err = bot.Send(msg)
-	// if err != nil {
-	// 	log.Panic(err)
-	// }
+	chatID := int64(493004756)
+	msg := tgbotapi.NewMessage(chatID, "Hello World")
+	_, err = bot.Send(msg)
+	if err != nil {
+		log.Panic(err)
+	}
 
 	return "Hello World", nil
 }
