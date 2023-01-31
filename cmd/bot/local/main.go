@@ -32,7 +32,7 @@ func main() {
 		log.Panic(err)
 	}
 
-	chatID := int64(000000000)
+	chatID := int64(493004756)
 	msg := tgbotapi.NewMessage(chatID, "Hello World")
 	_, err = bot.Send(msg)
 	if err != nil {
