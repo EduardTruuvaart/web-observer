@@ -109,6 +109,7 @@ func (c *ContentFetcher) saveLatestContent(ctx context.Context, url, data, cssSe
 		URL:         url,
 		Data:        []byte(data),
 		CssSelector: cssSelector,
+		IsActive:    isActive,
 	}
 	err := c.contentRepository.Save(ctx, content)
 
