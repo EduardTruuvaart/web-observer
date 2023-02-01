@@ -10,9 +10,13 @@ Parameters:
   BucketName:
     Type: String
     Default: web-observer-bucket
-  DynamoTableName:
+  ContentDynamoTableName:
     Type: String
     Default: ObserverTraces
+  FlowDynamoTableName:
+    Type: String
+    Default: BotFlow
+  
 
 ##########################################################################
 #  Global values that are applied to all resources                       #
@@ -47,12 +51,14 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole
         - DynamoDBCrudPolicy:
-            TableName: !Ref DynamoTableName
+            TableName: !Ref ContentDynamoTableName
         - S3CrudPolicy:
             BucketName: !Ref BucketName
       Environment:
         Variables:
           TELEGRAM_BOT_TOKEN: !Ref TelegramApiKey
+          FLOW_TABLE_NAME: !Ref FlowDynamoTableName
+          CONTENT_TABLE_NAME: !Ref ContentDynamoTableName
     DependsOn:
       - ObserverBotHandlerLogs
 
@@ -72,12 +78,13 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole
         - DynamoDBCrudPolicy:
-            TableName: !Ref DynamoTableName
+            TableName: !Ref ContentDynamoTableName
         - S3CrudPolicy:
             BucketName: !Ref BucketName
       Environment:
         Variables:
-          TABLE_NAME: !Ref DynamoTableName
+          FLOW_TABLE_NAME: !Ref FlowDynamoTableName
+          CONTENT_TABLE_NAME: !Ref ContentDynamoTableName
           BUCKET_NAME: !Ref BucketName
           TELEGRAM_BOT_TOKEN: !Ref TelegramApiKey
       Events:
@@ -98,7 +105,7 @@ Resources:
   ObserverTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Ref DynamoTableName
+      TableName: !Ref ContentDynamoTableName
       AttributeDefinitions:
         - AttributeName: URL
           AttributeType: S
@@ -108,6 +115,25 @@ Resources:
         - AttributeName: URL
           KeyType: HASH
         - AttributeName: ChatID
+          KeyType: RANGE
+      BillingMode: PROVISIONED
+      ProvisionedThroughput: 
+        ReadCapacityUnits: "1"
+        WriteCapacityUnits: "1"
+
+  BotFlowTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref FlowDynamoTableName
+      AttributeDefinitions:
+        - AttributeName: ChatID
+          AttributeType: N
+        - AttributeName: State
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ChatID
+          KeyType: HASH
+        - AttributeName: State
           KeyType: RANGE
       BillingMode: PROVISIONED
       ProvisionedThroughput: 
