@@ -15,7 +15,7 @@ func (t *TgCommandProcessor) processCommands(ctx context.Context, message *tgbot
 
 	switch command {
 	case "start":
-		_, err = SendMsg(t.bot, chatID, "Hello there! Just send me fullURL that you want to track.")
+		_, err = SendMsg(t.bot, chatID, "Hello there! Just send me full URL that you want to track.")
 
 	case "stop":
 		_, err = SendMsg(t.bot, chatID, "Bye bye!")

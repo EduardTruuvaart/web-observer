@@ -28,11 +28,6 @@ func NewProcessor(contentRepository repository.ContentRepository, bot *tgbotapi.
 	}, nil
 }
 
-func (t *TgCommandProcessor) Close() error {
-	t.bot.StopReceivingUpdates()
-	return nil
-}
-
 // Process an event, any update happened in telegram bot will be processed by one entry point
 func (t TgCommandProcessor) Process(ctx context.Context, update tgbotapi.Update) error {
 	if update.Message != nil {
