@@ -15,13 +15,13 @@ func (t *TgCommandProcessor) processCommands(ctx context.Context, message *tgbot
 
 	switch command {
 	case "start":
-		_, err = SendMsg(t.bot, chatID, "Hello there! Just send me your location and I will find nearby stations!")
+		_, err = SendMsg(t.bot, chatID, "Hello there! Just send me fullURL that you want to track.")
 
 	case "stop":
-		_, err = SendMsg(t.bot, chatID, "Buy buy!")
+		_, err = SendMsg(t.bot, chatID, "Bye bye!")
 
 	default:
-		_, err = SendMsg(t.bot, chatID, "Sorry, I don't understand that command. Try /help")
+		_, err = SendMsg(t.bot, chatID, "Sorry, I don't understand that command. Please use /start to get started.")
 	}
 
 	return err
