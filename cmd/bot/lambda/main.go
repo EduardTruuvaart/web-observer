@@ -17,6 +17,7 @@ import (
 )
 
 var contentRepository *repository.DynamoContentRepository
+var botFlowRepository *repository.DynamoBotFlowRepository
 
 func init() {
 	cfg, err := config.LoadDefaultConfig(context.TODO())
@@ -27,7 +28,8 @@ func init() {
 
 	db := *dynamodb.NewFromConfig(cfg)
 	s3Client := *s3.NewFromConfig(cfg)
-	contentRepository = repository.NewDynamoContentRepository(db, s3Client, os.Getenv("TABLE_NAME"), os.Getenv("BUCKET_NAME"))
+	contentRepository = repository.NewDynamoContentRepository(db, s3Client, os.Getenv("CONTENT_TABLE_NAME"), os.Getenv("BUCKET_NAME"))
+	botFlowRepository = repository.NewDynamoBotFlowRepository(db, os.Getenv("FLOW_TABLE_NAME"))
 }
 
 func main() {
@@ -53,9 +55,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) e
 		return err
 	}
 
-	if update.Message.IsCommand() {
-		commandProcessor.Process(ctx, update)
-	}
+	commandProcessor.Process(ctx, update)
 
 	return nil
 }
