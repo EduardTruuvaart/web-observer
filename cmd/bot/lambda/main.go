@@ -34,31 +34,28 @@ func main() {
 	lambda.Start(handleRequest)
 }
 
-func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (string, error) {
+func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) error {
 	// httpClient := &http.Client{}
 	// contentFetcher := service.NewContentFetcher(contentRepository, httpClient)
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_BOT_TOKEN"))
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	commandProcessor, err := commands.NewProcessor(contentRepository, bot)
 
+	if err != nil {
+		return err
+	}
+
 	var update tgbotapi.Update
 	if err := json.Unmarshal([]byte(request.Body), &update); err != nil {
-		return "", err
+		return err
 	}
 
 	if update.Message.IsCommand() {
 		commandProcessor.Process(ctx, update)
 	}
 
-	chatID := update.Message.Chat.ID
-	msg := tgbotapi.NewMessage(chatID, "Hello World")
-	_, err = bot.Send(msg)
-	if err != nil {
-		return "", err
-	}
-
-	return "Hello World", nil
+	return nil
 }
