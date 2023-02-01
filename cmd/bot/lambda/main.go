@@ -2,16 +2,18 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"os"
 
+	"github.com/EduardTruuvaart/web-observer/commands"
 	"github.com/EduardTruuvaart/web-observer/repository"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	tgbotapi "gopkg.in/telegram-bot-api.v4"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 var contentRepository *repository.DynamoContentRepository
@@ -32,21 +34,30 @@ func main() {
 	lambda.Start(handleRequest)
 }
 
-func handleRequest(c context.Context, request events.APIGatewayProxyRequest) (string, error) {
-	log.Println(request.Body)
+func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (string, error) {
 	// httpClient := &http.Client{}
 	// contentFetcher := service.NewContentFetcher(contentRepository, httpClient)
-
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_BOT_TOKEN"))
 	if err != nil {
-		log.Panic(err)
+		return "", err
 	}
 
-	chatID := int64(493004756)
+	commandProcessor, err := commands.NewProcessor(contentRepository, bot)
+
+	var update tgbotapi.Update
+	if err := json.Unmarshal([]byte(request.Body), &update); err != nil {
+		return "", err
+	}
+
+	if update.Message.IsCommand() {
+		commandProcessor.Process(ctx, update)
+	}
+
+	chatID := update.Message.Chat.ID
 	msg := tgbotapi.NewMessage(chatID, "Hello World")
 	_, err = bot.Send(msg)
 	if err != nil {
-		log.Panic(err)
+		return "", err
 	}
 
 	return "Hello World", nil
