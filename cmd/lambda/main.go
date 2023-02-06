@@ -40,7 +40,7 @@ func handleRequest(ctx context.Context) error {
 
 	url := "https://eu.store.ui.com/collections/unifi-protect-cameras/products/g4-doorbell-pro"
 
-	result, err := contentFetcher.FetchAndCompare(ctx, 123, url, "div.comProduct__title--wrapper > div > span")
+	result, err := contentFetcher.FetchAndCompare(ctx, 123, url, "div.comProduct__title-wrapper > div > span")
 
 	if err != nil {
 		log.Fatal(err)
