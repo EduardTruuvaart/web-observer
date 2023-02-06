@@ -134,7 +134,7 @@ func (r *DynamoContentRepository) UpdateWithData(ctx context.Context, chatID int
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":url":         &types.AttributeValueMemberS{Value: url},
 			":fileName":    &types.AttributeValueMemberS{Value: fileName},
-			":updatedDate": &types.AttributeValueMemberN{Value: formattedDate},
+			":updatedDate": &types.AttributeValueMemberS{Value: formattedDate},
 		},
 		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,
 	}
@@ -172,7 +172,7 @@ func (r *DynamoContentRepository) UpdateWithUrl(ctx context.Context, chatID int6
 		UpdateExpression: aws.String("SET URL = :url, UpdatedDate = :updatedDate"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":url":         &types.AttributeValueMemberS{Value: url},
-			":updatedDate": &types.AttributeValueMemberN{Value: formattedDate},
+			":updatedDate": &types.AttributeValueMemberS{Value: formattedDate},
 		},
 		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,
 	}
@@ -199,7 +199,7 @@ func (r *DynamoContentRepository) UpdateWithSelectorAndActivate(ctx context.Cont
 		UpdateExpression: aws.String("SET CssSelector = :cssSelector, IsActive = :isActive, UpdatedDate = :updatedDate"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":cssSelector": &types.AttributeValueMemberS{Value: cssSelector},
-			":updatedDate": &types.AttributeValueMemberN{Value: formattedDate},
+			":updatedDate": &types.AttributeValueMemberS{Value: formattedDate},
 			":isActive":    &types.AttributeValueMemberBOOL{Value: true},
 		},
 		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,
