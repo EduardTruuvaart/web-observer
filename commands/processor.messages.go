@@ -22,7 +22,7 @@ func (t *TgCommandProcessor) processMessages(ctx context.Context, message *tgbot
 	case domain.URLRequsted:
 		t.contentRepository.UpdateWithUrl(ctx, chatID, message.Text)
 		_ = t.botFlowRepository.Save(ctx, chatID, domain.SelectorRequested)
-		_, err = SendMsg(t.bot, chatID, "Please provide css selector for the element you want to track. For example: div.comProduct--wrapper > div > span")
+		_, err = SendMsg(t.bot, chatID, "Please provide css selector for the element you want to track. For example: div.comProduct-wrapper > div > span")
 	case domain.SelectorRequested:
 		t.contentRepository.UpdateWithSelectorAndActivate(ctx, chatID, message.Text)
 		_ = t.botFlowRepository.Delete(ctx, chatID)
