@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -17,12 +16,28 @@ type MockedContentRepository struct {
 	mock.Mock
 }
 
-func (m *MockedContentRepository) FindByID(ctx context.Context, url string) (*domain.ObserverTrace, error) {
-	args := m.Called(ctx, url)
+func (m *MockedContentRepository) Create(ctx context.Context, chatID int64) error {
+	args := m.Called(ctx, chatID)
+	return args.Error(0)
+}
+func (m *MockedContentRepository) FindByID(ctx context.Context, chatID int64) (*domain.ObserverTrace, error) {
+	args := m.Called(ctx, chatID)
 	return args.Get(0).(*domain.ObserverTrace), args.Error(1)
 }
-func (m *MockedContentRepository) Save(ctx context.Context, content domain.ObserverTrace) error {
-	args := m.Called(ctx, content)
+func (m *MockedContentRepository) UpdateWithData(ctx context.Context, chatID int64, url string, data []byte) error {
+	args := m.Called(ctx, chatID, url, data)
+	return args.Error(0)
+}
+func (m *MockedContentRepository) UpdateWithUrl(ctx context.Context, chatID int64, url string) error {
+	args := m.Called(ctx, chatID, url)
+	return args.Error(0)
+}
+func (m *MockedContentRepository) UpdateWithSelectorAndActivate(ctx context.Context, chatID int64, cssSelector string) error {
+	args := m.Called(ctx, chatID, cssSelector)
+	return args.Error(0)
+}
+func (m *MockedContentRepository) Delete(ctx context.Context, chatID int64) error {
+	args := m.Called(ctx, chatID)
 	return args.Error(0)
 }
 
@@ -33,20 +48,21 @@ func TestFetchAndCompareWithIdenticalStringsThenResultEqualsUnchanged(t *testing
 		w.Write([]byte("<html><body><span>Out of Stock</span>My content</body></html>"))
 	}))
 
-	data, _ := base64.StdEncoding.Strict().DecodeString("H4sIAAAAAAAA/7LJKMnNsbNJyk+ptLMpLkjMs/MvLVHIT1MILslPzrbRBwv5Viok5+eVpOaV2OhDVOqDtQECAAD//1Jq3a09AAAA")
+	data := []byte("<html><body><span>Out of Stock</span>My content</body></html>")
+	url := fmt.Sprintf("%s/my-endpoint", mockServer.URL)
 	dbContent := &domain.ObserverTrace{
-		Data: data,
-		URL:  fmt.Sprintf("%s/my-endpoint", mockServer.URL),
+		Data: &data,
+		URL:  &url,
 	}
 	mockedTrackingRepository := new(MockedContentRepository)
 	mockedTrackingRepository.On("FindByID", mock.Anything, mock.Anything).Return(dbContent, nil)
-	mockedTrackingRepository.On("Save", mock.Anything, mock.Anything).Return(nil)
+	mockedTrackingRepository.On("UpdateWithData", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	httpClient := &http.Client{}
 	contentFetcher := NewContentFetcher(mockedTrackingRepository, httpClient)
 
 	// Act
-	result, err := contentFetcher.FetchAndCompare(context.TODO(), fmt.Sprintf("%s/my-endpoint", mockServer.URL), "body > span")
+	result, err := contentFetcher.FetchAndCompare(context.TODO(), 123, fmt.Sprintf("%s/my-endpoint", mockServer.URL), "body > span")
 
 	// Assert
 	assert.Nil(t, err)
@@ -61,20 +77,22 @@ func TestFetchAndCompareWithDifferentStringsThenResultEqualsUpdated(t *testing.T
 		w.Write([]byte("<html><body><span>In Stock</span>My content</body></html>"))
 	}))
 
-	data, _ := base64.StdEncoding.Strict().DecodeString("H4sIAAAAAAAA/7LJKMnNsbNJyk+ptLMpLkjMs/MvLVHIT1MILslPzrbRBwv5Viok5+eVpOaV2OhDVOqDtQECAAD//1Jq3a09AAAA")
+	data := []byte("<html><body><span>Out of Stock</span>My content</body></html>")
+
+	url := fmt.Sprintf("%s/my-endpoint", mockServer.URL)
 	dbContent := &domain.ObserverTrace{
-		Data: data,
-		URL:  fmt.Sprintf("%s/my-endpoint", mockServer.URL),
+		Data: &data,
+		URL:  &url,
 	}
 	mockedTrackingRepository := new(MockedContentRepository)
 	mockedTrackingRepository.On("FindByID", mock.Anything, mock.Anything).Return(dbContent, nil)
-	mockedTrackingRepository.On("Save", mock.Anything, mock.Anything).Return(nil)
+	mockedTrackingRepository.On("UpdateWithData", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	httpClient := &http.Client{}
 	contentFetcher := NewContentFetcher(mockedTrackingRepository, httpClient)
 
 	// Act
-	result, err := contentFetcher.FetchAndCompare(context.TODO(), fmt.Sprintf("%s/my-endpoint", mockServer.URL), "body > span")
+	result, err := contentFetcher.FetchAndCompare(context.TODO(), 123, fmt.Sprintf("%s/my-endpoint", mockServer.URL), "body > span")
 
 	// Assert
 	assert.Nil(t, err)

@@ -38,6 +38,9 @@ func (t TgCommandProcessor) Process(ctx context.Context, update tgbotapi.Update)
 		if update.Message.IsCommand() {
 			// this is a command, i.e. starting with /, for example, "/start" or "/track'
 			return t.processCommands(ctx, update.Message)
+		} else {
+			// this is a plain message, i.e. not starting with /, for example, "https://google.com"
+			return t.processMessages(ctx, update.Message)
 		}
 
 		// just a plain message was sent

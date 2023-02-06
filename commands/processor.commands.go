@@ -18,10 +18,12 @@ func (t *TgCommandProcessor) processCommands(ctx context.Context, message *tgbot
 	case "start":
 		_, _ = SendMsg(t.bot, chatID, "Hello there! Just send me full URL that you want to track.")
 		err = t.botFlowRepository.Save(ctx, chatID, domain.URLRequsted)
+		t.contentRepository.Create(ctx, chatID)
 
 	case "stop":
 		_, _ = SendMsg(t.bot, chatID, "Bye bye!")
 		err = t.botFlowRepository.Delete(ctx, chatID)
+		t.contentRepository.Delete(ctx, chatID)
 
 	default:
 		_, err = SendMsg(t.bot, chatID, "Sorry, I don't understand that command. Please use /start to get started.")
