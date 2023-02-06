@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/EduardTruuvaart/web-observer/domain"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -15,10 +16,12 @@ func (t *TgCommandProcessor) processCommands(ctx context.Context, message *tgbot
 
 	switch command {
 	case "start":
-		_, err = SendMsg(t.bot, chatID, "Hello there! Just send me full URL that you want to track.")
+		_, _ = SendMsg(t.bot, chatID, "Hello there! Just send me full URL that you want to track.")
+		err = t.botFlowRepository.Save(ctx, chatID, domain.URLRequsted)
 
 	case "stop":
-		_, err = SendMsg(t.bot, chatID, "Bye bye!")
+		_, _ = SendMsg(t.bot, chatID, "Bye bye!")
+		err = t.botFlowRepository.Delete(ctx, chatID)
 
 	default:
 		_, err = SendMsg(t.bot, chatID, "Sorry, I don't understand that command. Please use /start to get started.")

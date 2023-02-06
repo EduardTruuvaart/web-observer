@@ -15,6 +15,7 @@ import (
 type BotFlowRepository interface {
 	FindByChatID(ctx context.Context, chatID int64) (domain.BotFlowState, error)
 	Save(ctx context.Context, chatID int64, state domain.BotFlowState) error
+	Delete(ctx context.Context, chatID int64) error
 }
 
 type DynamoBotFlowRepository struct {
@@ -69,6 +70,23 @@ func (r *DynamoBotFlowRepository) Save(ctx context.Context, chatID int64, state 
 
 	if err != nil {
 		fmt.Printf("Got error calling dynamodb PutItem: %s\n", err)
+		return err
+	}
+
+	return nil
+}
+
+func (r *DynamoBotFlowRepository) Delete(ctx context.Context, chatID int64) error {
+	input := dynamodb.DeleteItemInput{
+		TableName: aws.String(r.dynamoTableName),
+		Key: map[string]types.AttributeValue{
+			"ChatID": &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
+		},
+	}
+	_, err := r.db.DeleteItem(ctx, &input)
+
+	if err != nil {
+		fmt.Printf("Got error calling dynamodb DeleteItem: %s\n", err)
 		return err
 	}
 
