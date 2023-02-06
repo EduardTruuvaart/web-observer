@@ -14,6 +14,7 @@ func (t *TgCommandProcessor) processCommands(ctx context.Context, message *tgbot
 
 	var err error
 
+	// TODO: Use parallel processing
 	switch command {
 	case "start":
 		_, _ = SendMsg(t.bot, chatID, "Hello there! Just send me full URL that you want to track.")

@@ -46,7 +46,7 @@ func (r *DynamoContentRepository) FindByID(ctx context.Context, chatID int64) (*
 	params := &dynamodb.GetItemInput{
 		TableName: aws.String(r.dynamoTableName),
 		Key: map[string]types.AttributeValue{
-			"ChatID": &types.AttributeValueMemberS{Value: strconv.FormatInt(chatID, 10)},
+			"ChatID": &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
 		},
 		ConsistentRead:         aws.Bool(false),
 		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,
@@ -103,7 +103,7 @@ func (r *DynamoContentRepository) Create(ctx context.Context, chatID int64) erro
 	input := dynamodb.PutItemInput{
 		TableName: aws.String(r.dynamoTableName),
 		Item: map[string]types.AttributeValue{
-			"ChatID":      &types.AttributeValueMemberS{Value: strconv.FormatInt(chatID, 10)},
+			"ChatID":      &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
 			"IsActive":    &types.AttributeValueMemberBOOL{Value: false},
 			"CreatedDate": &types.AttributeValueMemberS{Value: formattedDate},
 		},
@@ -128,7 +128,7 @@ func (r *DynamoContentRepository) UpdateWithData(ctx context.Context, chatID int
 	input := dynamodb.UpdateItemInput{
 		TableName: aws.String(r.dynamoTableName),
 		Key: map[string]types.AttributeValue{
-			"ChatID": &types.AttributeValueMemberS{Value: strconv.FormatInt(chatID, 10)},
+			"ChatID": &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
 		},
 		UpdateExpression: aws.String("SET URL = :url, FileName = :fileName, UpdatedDate = :updatedDate"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
@@ -167,7 +167,7 @@ func (r *DynamoContentRepository) UpdateWithUrl(ctx context.Context, chatID int6
 	input := dynamodb.UpdateItemInput{
 		TableName: aws.String(r.dynamoTableName),
 		Key: map[string]types.AttributeValue{
-			"ChatID": &types.AttributeValueMemberS{Value: strconv.FormatInt(chatID, 10)},
+			"ChatID": &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
 		},
 		UpdateExpression: aws.String("SET URL = :url, UpdatedDate = :updatedDate"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
@@ -194,7 +194,7 @@ func (r *DynamoContentRepository) UpdateWithSelectorAndActivate(ctx context.Cont
 	input := dynamodb.UpdateItemInput{
 		TableName: aws.String(r.dynamoTableName),
 		Key: map[string]types.AttributeValue{
-			"ChatID": &types.AttributeValueMemberS{Value: strconv.FormatInt(chatID, 10)},
+			"ChatID": &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
 		},
 		UpdateExpression: aws.String("SET CssSelector = :cssSelector, IsActive = :isActive, UpdatedDate = :updatedDate"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
