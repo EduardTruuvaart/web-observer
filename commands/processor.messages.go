@@ -25,7 +25,7 @@ func (t *TgCommandProcessor) processMessages(ctx context.Context, message *tgbot
 		_, err = SendMsg(t.bot, chatID, "Please provide css selector for the element you want to track. For example: div.comProduct--wrapper > div > span")
 	case domain.SelectorRequested:
 		t.contentRepository.UpdateWithSelectorAndActivate(ctx, chatID, message.Text)
-		_ = t.botFlowRepository.Save(ctx, chatID, domain.SelectorRequested)
+		_ = t.botFlowRepository.Delete(ctx, chatID)
 		_, err = SendMsg(t.bot, chatID, "Tracking has been activated. You will receive notifications once selection changes.")
 	case domain.NotStarted:
 		_, err = SendMsg(t.bot, chatID, "Please use /start command to start a tracking flow")

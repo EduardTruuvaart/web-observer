@@ -42,17 +42,6 @@ func (t TgCommandProcessor) Process(ctx context.Context, update tgbotapi.Update)
 			// this is a plain message, i.e. not starting with /, for example, "https://google.com"
 			return t.processMessages(ctx, update.Message)
 		}
-
-		// just a plain message was sent
-		SendMsg(t.bot, update.Message.Chat.ID,
-			"Sorry, I don't understand you. Please use /start to get started.")
-		return nil
-	}
-
-	if update.CallbackQuery != nil {
-
-		// this is button click callback
-		//return t.processButtonCallback(ctx, update.CallbackQuery)
 	}
 
 	return nil
