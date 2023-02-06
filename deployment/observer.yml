@@ -52,6 +52,8 @@ Resources:
         - AWSLambdaBasicExecutionRole
         - DynamoDBCrudPolicy:
             TableName: !Ref ContentDynamoTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FlowDynamoTableName
         - S3CrudPolicy:
             BucketName: !Ref BucketName
       Environment:
@@ -128,13 +130,9 @@ Resources:
       AttributeDefinitions:
         - AttributeName: ChatID
           AttributeType: N
-        - AttributeName: State
-          AttributeType: S
       KeySchema:
         - AttributeName: ChatID
           KeyType: HASH
-        - AttributeName: State
-          KeyType: RANGE
       BillingMode: PROVISIONED
       ProvisionedThroughput: 
         ReadCapacityUnits: "1"
