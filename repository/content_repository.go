@@ -130,11 +130,14 @@ func (r *DynamoContentRepository) UpdateWithData(ctx context.Context, chatID int
 		Key: map[string]types.AttributeValue{
 			"ChatID": &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
 		},
-		UpdateExpression: aws.String("SET URL = :url, FileName = :fileName, UpdatedDate = :updatedDate"),
+		UpdateExpression: aws.String("SET #url = :url, FileName = :fileName, UpdatedDate = :updatedDate"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":url":         &types.AttributeValueMemberS{Value: url},
 			":fileName":    &types.AttributeValueMemberS{Value: fileName},
 			":updatedDate": &types.AttributeValueMemberS{Value: formattedDate},
+		},
+		ExpressionAttributeNames: map[string]string{
+			"#url": "URL",
 		},
 		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,
 	}
@@ -169,10 +172,13 @@ func (r *DynamoContentRepository) UpdateWithUrl(ctx context.Context, chatID int6
 		Key: map[string]types.AttributeValue{
 			"ChatID": &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
 		},
-		UpdateExpression: aws.String("SET URL = :url, UpdatedDate = :updatedDate"),
+		UpdateExpression: aws.String("SET #url = :url, UpdatedDate = :updatedDate"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":url":         &types.AttributeValueMemberS{Value: url},
 			":updatedDate": &types.AttributeValueMemberS{Value: formattedDate},
+		},
+		ExpressionAttributeNames: map[string]string{
+			"#url": "URL",
 		},
 		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,
 	}
