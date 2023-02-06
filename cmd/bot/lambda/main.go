@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 
@@ -36,26 +37,28 @@ func main() {
 	lambda.Start(handleRequest)
 }
 
-func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) error {
+func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) {
 	// httpClient := &http.Client{}
 	// contentFetcher := service.NewContentFetcher(contentRepository, httpClient)
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_BOT_TOKEN"))
 	if err != nil {
-		return err
+		fmt.Printf("Error creating bot: %s\n", err.Error())
 	}
 
-	commandProcessor, err := commands.NewProcessor(contentRepository, bot)
+	commandProcessor, err := commands.NewProcessor(contentRepository, botFlowRepository, bot)
 
 	if err != nil {
-		return err
+		fmt.Printf("Error creating command processor: %s\n", err.Error())
 	}
 
 	var update tgbotapi.Update
 	if err := json.Unmarshal([]byte(request.Body), &update); err != nil {
-		return err
+		fmt.Printf("Error unmarshalling request: %s\n", err.Error())
 	}
 
-	commandProcessor.Process(ctx, update)
+	err = commandProcessor.Process(ctx, update)
 
-	return nil
+	if err != nil {
+		fmt.Printf("Error processing command: %s\n", err.Error())
+	}
 }

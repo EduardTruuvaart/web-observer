@@ -19,12 +19,15 @@ type CommandProcessor interface {
 type TgCommandProcessor struct {
 	bot               *tgbotapi.BotAPI
 	contentRepository repository.ContentRepository
+	botFlowRepository repository.BotFlowRepository
 }
 
-func NewProcessor(contentRepository repository.ContentRepository, bot *tgbotapi.BotAPI) (*TgCommandProcessor, error) {
+func NewProcessor(contentRepository repository.ContentRepository, botFlowRepository repository.BotFlowRepository,
+	bot *tgbotapi.BotAPI) (*TgCommandProcessor, error) {
 	return &TgCommandProcessor{
 		bot:               bot,
 		contentRepository: contentRepository,
+		botFlowRepository: botFlowRepository,
 	}, nil
 }
 
