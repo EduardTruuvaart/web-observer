@@ -1,9 +1,10 @@
 package domain
 
 type ObserverTrace struct {
-	URL         string
-	FileName    string
-	Data        []byte
-	CssSelector string
+	ChatID      int64
+	URL         *string
+	FileName    *string
+	Data        *[]byte
+	CssSelector *string
 	IsActive    bool
 }

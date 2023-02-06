@@ -24,7 +24,7 @@ func NewContentFetcher(contentRepository repository.ContentRepository, httpClien
 	}
 }
 
-func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSelector string) (domain.FetchResult, error) {
+func (c *ContentFetcher) FetchAndCompare(ctx context.Context, chatID int64, url string, cssSelector string) (domain.FetchResult, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 
 	if err != nil {
@@ -48,13 +48,13 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSel
 		return domain.FetchResult{}, err
 	}
 
-	savedResult, err := c.contentRepository.FindByID(ctx, url)
+	savedResult, err := c.contentRepository.FindByID(ctx, chatID)
 	if err != nil {
 		fmt.Printf("Got error calling contentRepository.FindByID: %s\n", err)
 		return domain.FetchResult{}, err
 	}
 
-	err = c.saveLatestContent(ctx, url, data, cssSelector, true)
+	err = c.contentRepository.UpdateWithData(ctx, chatID, url, []byte(data))
 
 	if err != nil {
 		fmt.Printf("Got error calling saveLatestContent: %s\n", err)
@@ -67,7 +67,7 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSel
 		}, nil
 	}
 
-	result, err := htmldiff.CompareDocumentSection(string(savedResult.Data), data, cssSelector)
+	result, err := htmldiff.CompareDocumentSection(string(*savedResult.Data), data, cssSelector)
 
 	if err != nil {
 		fmt.Printf("Got error comparing html documents: %s\n", err)
@@ -102,16 +102,4 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, url string, cssSel
 		Difference: diffString,
 		DiffSize:   result.DiffSize,
 	}, nil
-}
-
-func (c *ContentFetcher) saveLatestContent(ctx context.Context, url, data, cssSelector string, isActive bool) error {
-	content := domain.ObserverTrace{
-		URL:         url,
-		Data:        []byte(data),
-		CssSelector: cssSelector,
-		IsActive:    isActive,
-	}
-	err := c.contentRepository.Save(ctx, content)
-
-	return err
 }
