@@ -48,7 +48,7 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, chatID int64, url 
 		return domain.FetchResult{}, err
 	}
 
-	savedResult, err := c.contentRepository.FindByID(ctx, chatID)
+	savedResult, err := c.contentRepository.FindByID(ctx, chatID, url)
 	if err != nil {
 		fmt.Printf("Got error calling contentRepository.FindByID: %s\n", err)
 		return domain.FetchResult{}, err

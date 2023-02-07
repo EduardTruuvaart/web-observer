@@ -18,12 +18,11 @@ import (
 )
 
 type ContentRepository interface {
-	FindByID(ctx context.Context, chatID int64) (*domain.ObserverTrace, error)
-	Create(ctx context.Context, chatID int64) error
+	FindByID(ctx context.Context, chatID int64, url string) (*domain.ObserverTrace, error)
+	Create(ctx context.Context, chatID int64, url string) error
 	UpdateWithData(ctx context.Context, chatID int64, url string, data []byte) error
-	UpdateWithUrl(ctx context.Context, chatID int64, url string) error
-	UpdateWithSelectorAndActivate(ctx context.Context, chatID int64, cssSelector string) error
-	Delete(ctx context.Context, chatID int64) error
+	UpdateWithSelectorAndActivate(ctx context.Context, chatID int64, cssSelector string, url string) error
+	Delete(ctx context.Context, chatID int64, url string) error
 }
 
 type DynamoContentRepository struct {
@@ -42,11 +41,12 @@ func NewDynamoContentRepository(db dynamodb.Client, s3Client s3.Client, dynamoTa
 	}
 }
 
-func (r *DynamoContentRepository) FindByID(ctx context.Context, chatID int64) (*domain.ObserverTrace, error) {
+func (r *DynamoContentRepository) FindByID(ctx context.Context, chatID int64, url string) (*domain.ObserverTrace, error) {
 	params := &dynamodb.GetItemInput{
 		TableName: aws.String(r.dynamoTableName),
 		Key: map[string]types.AttributeValue{
 			"ChatID": &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
+			"URL":    &types.AttributeValueMemberS{Value: url},
 		},
 		ConsistentRead:         aws.Bool(false),
 		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,
@@ -96,7 +96,7 @@ func (r *DynamoContentRepository) FindByID(ctx context.Context, chatID int64) (*
 	return content, nil
 }
 
-func (r *DynamoContentRepository) Create(ctx context.Context, chatID int64) error {
+func (r *DynamoContentRepository) Create(ctx context.Context, chatID int64, url string) error {
 	now := time.Now().UTC()
 	formattedDate := now.Format(time.RFC3339)
 
@@ -104,6 +104,7 @@ func (r *DynamoContentRepository) Create(ctx context.Context, chatID int64) erro
 		TableName: aws.String(r.dynamoTableName),
 		Item: map[string]types.AttributeValue{
 			"ChatID":      &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
+			"URL":         &types.AttributeValueMemberS{Value: url},
 			"IsActive":    &types.AttributeValueMemberBOOL{Value: false},
 			"CreatedDate": &types.AttributeValueMemberS{Value: formattedDate},
 		},
@@ -129,6 +130,7 @@ func (r *DynamoContentRepository) UpdateWithData(ctx context.Context, chatID int
 		TableName: aws.String(r.dynamoTableName),
 		Key: map[string]types.AttributeValue{
 			"ChatID": &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
+			"URL":    &types.AttributeValueMemberS{Value: url},
 		},
 		UpdateExpression: aws.String("SET #url = :url, FileName = :fileName, UpdatedDate = :updatedDate"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
@@ -163,7 +165,7 @@ func (r *DynamoContentRepository) UpdateWithData(ctx context.Context, chatID int
 	return nil
 }
 
-func (r *DynamoContentRepository) UpdateWithUrl(ctx context.Context, chatID int64, url string) error {
+func (r *DynamoContentRepository) UpdateWithSelectorAndActivate(ctx context.Context, chatID int64, cssSelector string, url string) error {
 	now := time.Now().UTC()
 	formattedDate := now.Format(time.RFC3339)
 
@@ -171,36 +173,7 @@ func (r *DynamoContentRepository) UpdateWithUrl(ctx context.Context, chatID int6
 		TableName: aws.String(r.dynamoTableName),
 		Key: map[string]types.AttributeValue{
 			"ChatID": &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
-		},
-		UpdateExpression: aws.String("SET #url = :url, UpdatedDate = :updatedDate"),
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":url":         &types.AttributeValueMemberS{Value: url},
-			":updatedDate": &types.AttributeValueMemberS{Value: formattedDate},
-		},
-		ExpressionAttributeNames: map[string]string{
-			"#url": "URL",
-		},
-		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,
-	}
-
-	_, err := r.db.UpdateItem(ctx, &input)
-
-	if err != nil {
-		fmt.Printf("Got error calling dynamodb UpdateItem: %s\n", err)
-		return err
-	}
-
-	return nil
-}
-
-func (r *DynamoContentRepository) UpdateWithSelectorAndActivate(ctx context.Context, chatID int64, cssSelector string) error {
-	now := time.Now().UTC()
-	formattedDate := now.Format(time.RFC3339)
-
-	input := dynamodb.UpdateItemInput{
-		TableName: aws.String(r.dynamoTableName),
-		Key: map[string]types.AttributeValue{
-			"ChatID": &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
+			"URL":    &types.AttributeValueMemberS{Value: url},
 		},
 		UpdateExpression: aws.String("SET CssSelector = :cssSelector, IsActive = :isActive, UpdatedDate = :updatedDate"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
@@ -221,10 +194,11 @@ func (r *DynamoContentRepository) UpdateWithSelectorAndActivate(ctx context.Cont
 	return nil
 }
 
-func (r *DynamoContentRepository) Delete(ctx context.Context, chatID int64) error {
+func (r *DynamoContentRepository) Delete(ctx context.Context, chatID int64, url string) error {
 	input := dynamodb.DeleteItemInput{
 		TableName: aws.String(r.dynamoTableName),
 		Key: map[string]types.AttributeValue{
+			"URL":    &types.AttributeValueMemberS{Value: url},
 			"ChatID": &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
 		},
 	}
