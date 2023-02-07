@@ -109,11 +109,15 @@ Resources:
     Properties:
       TableName: !Ref ContentDynamoTableName
       AttributeDefinitions:
+        - AttributeName: URL
+          AttributeType: S
         - AttributeName: ChatID
           AttributeType: N
       KeySchema:
-        - AttributeName: ChatID
+        - AttributeName: URL
           KeyType: HASH
+        - AttributeName: ChatID
+          KeyType: RANGE
       BillingMode: PROVISIONED
       ProvisionedThroughput: 
         ReadCapacityUnits: "1"
