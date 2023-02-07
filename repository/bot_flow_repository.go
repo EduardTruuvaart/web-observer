@@ -74,7 +74,7 @@ func (r *DynamoBotFlowRepository) Save(ctx context.Context, chatID int64, state 
 	}
 
 	if url != nil {
-		input.Item["Url"] = &types.AttributeValueMemberS{Value: *url}
+		input.Item["URL"] = &types.AttributeValueMemberS{Value: *url}
 	}
 
 	_, err := r.db.PutItem(ctx, &input)

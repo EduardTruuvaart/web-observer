@@ -17,11 +17,10 @@ func (t *TgCommandProcessor) processCommands(ctx context.Context, message *tgbot
 	// TODO: Use parallel processing
 	switch command {
 	case "start":
-		_, _ = SendMsg(t.bot, chatID, "Hello there! Just send me full URL that you want to track.")
 		err = t.botFlowRepository.Save(ctx, chatID, domain.URLRequsted, nil)
+		_, _ = SendMsg(t.bot, chatID, "Hello there! Just send me full URL that you want to track.")
 
 	case "stop":
-		_, _ = SendMsg(t.bot, chatID, "Bye bye!")
 		flowStep, savedUrl, _ := t.botFlowRepository.FindByChatID(ctx, chatID)
 
 		if flowStep != domain.NotStarted {
@@ -31,6 +30,7 @@ func (t *TgCommandProcessor) processCommands(ctx context.Context, message *tgbot
 				t.contentRepository.Delete(ctx, chatID, *savedUrl)
 			}
 		}
+		_, _ = SendMsg(t.bot, chatID, "Bye bye!")
 
 	default:
 		_, err = SendMsg(t.bot, chatID, "Sorry, I don't understand that command. Please use /start to get started.")
