@@ -15,7 +15,7 @@ Parameters:
     Default: ObserverTraces
   FlowDynamoTableName:
     Type: String
-    Default: BotFlow
+    Default: ObserverBotFlow
   
 
 ##########################################################################
