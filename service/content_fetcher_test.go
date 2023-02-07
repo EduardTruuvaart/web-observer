@@ -16,11 +16,11 @@ type MockedContentRepository struct {
 	mock.Mock
 }
 
-func (m *MockedContentRepository) Create(ctx context.Context, chatID int64) error {
-	args := m.Called(ctx, chatID)
+func (m *MockedContentRepository) Create(ctx context.Context, chatID int64, url string) error {
+	args := m.Called(ctx, chatID, url)
 	return args.Error(0)
 }
-func (m *MockedContentRepository) FindByID(ctx context.Context, chatID int64) (*domain.ObserverTrace, error) {
+func (m *MockedContentRepository) FindByID(ctx context.Context, chatID int64, url string) (*domain.ObserverTrace, error) {
 	args := m.Called(ctx, chatID)
 	return args.Get(0).(*domain.ObserverTrace), args.Error(1)
 }
@@ -32,12 +32,12 @@ func (m *MockedContentRepository) UpdateWithUrl(ctx context.Context, chatID int6
 	args := m.Called(ctx, chatID, url)
 	return args.Error(0)
 }
-func (m *MockedContentRepository) UpdateWithSelectorAndActivate(ctx context.Context, chatID int64, cssSelector string) error {
-	args := m.Called(ctx, chatID, cssSelector)
+func (m *MockedContentRepository) UpdateWithSelectorAndActivate(ctx context.Context, chatID int64, cssSelector string, url string) error {
+	args := m.Called(ctx, chatID, cssSelector, url)
 	return args.Error(0)
 }
-func (m *MockedContentRepository) Delete(ctx context.Context, chatID int64) error {
-	args := m.Called(ctx, chatID)
+func (m *MockedContentRepository) Delete(ctx context.Context, chatID int64, url string) error {
+	args := m.Called(ctx, chatID, url)
 	return args.Error(0)
 }
 
@@ -55,7 +55,7 @@ func TestFetchAndCompareWithIdenticalStringsThenResultEqualsUnchanged(t *testing
 		URL:  &url,
 	}
 	mockedTrackingRepository := new(MockedContentRepository)
-	mockedTrackingRepository.On("FindByID", mock.Anything, mock.Anything).Return(dbContent, nil)
+	mockedTrackingRepository.On("FindByID", mock.Anything, mock.Anything, mock.Anything).Return(dbContent, nil)
 	mockedTrackingRepository.On("UpdateWithData", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	httpClient := &http.Client{}
@@ -85,7 +85,7 @@ func TestFetchAndCompareWithDifferentStringsThenResultEqualsUpdated(t *testing.T
 		URL:  &url,
 	}
 	mockedTrackingRepository := new(MockedContentRepository)
-	mockedTrackingRepository.On("FindByID", mock.Anything, mock.Anything).Return(dbContent, nil)
+	mockedTrackingRepository.On("FindByID", mock.Anything, mock.Anything, mock.Anything).Return(dbContent, nil)
 	mockedTrackingRepository.On("UpdateWithData", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	httpClient := &http.Client{}

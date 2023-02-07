@@ -13,8 +13,8 @@ import (
 )
 
 type BotFlowRepository interface {
-	FindByChatID(ctx context.Context, chatID int64) (domain.BotFlowState, error)
-	Save(ctx context.Context, chatID int64, state domain.BotFlowState) error
+	FindByChatID(ctx context.Context, chatID int64) (domain.BotFlowState, *string, error)
+	Save(ctx context.Context, chatID int64, state domain.BotFlowState, url *string) error
 	Delete(ctx context.Context, chatID int64) error
 }
 
@@ -30,7 +30,7 @@ func NewDynamoBotFlowRepository(db dynamodb.Client, dynamoTableName string) *Dyn
 	}
 }
 
-func (r *DynamoBotFlowRepository) FindByChatID(ctx context.Context, chatID int64) (domain.BotFlowState, error) {
+func (r *DynamoBotFlowRepository) FindByChatID(ctx context.Context, chatID int64) (domain.BotFlowState, *string, error) {
 	params := &dynamodb.GetItemInput{
 		TableName: aws.String(r.dynamoTableName),
 		Key: map[string]types.AttributeValue{
@@ -43,18 +43,24 @@ func (r *DynamoBotFlowRepository) FindByChatID(ctx context.Context, chatID int64
 
 	if err != nil {
 		fmt.Printf("Got error calling dynamodb GetItem: %s\n", err)
-		return "", err
+		return "", nil, err
 	}
 
 	if len(result.Item) == 0 {
-		return domain.NotStarted, nil
+		return domain.NotStarted, nil, nil
 	}
 
 	state := result.Item["State"].(*types.AttributeValueMemberS).Value
-	return domain.BotFlowState(state), nil
+
+	if _, exists := result.Item["URL"]; !exists {
+		return domain.BotFlowState(state), nil, nil
+	}
+
+	url := result.Item["URL"].(*types.AttributeValueMemberS).Value
+	return domain.BotFlowState(state), &url, nil
 }
 
-func (r *DynamoBotFlowRepository) Save(ctx context.Context, chatID int64, state domain.BotFlowState) error {
+func (r *DynamoBotFlowRepository) Save(ctx context.Context, chatID int64, state domain.BotFlowState, url *string) error {
 	now := time.Now().UTC()
 	formattedDate := now.Format(time.RFC3339)
 
@@ -66,6 +72,11 @@ func (r *DynamoBotFlowRepository) Save(ctx context.Context, chatID int64, state 
 			"State":       &types.AttributeValueMemberS{Value: string(state)},
 		},
 	}
+
+	if url != nil {
+		input.Item["Url"] = &types.AttributeValueMemberS{Value: *url}
+	}
+
 	_, err := r.db.PutItem(ctx, &input)
 
 	if err != nil {
