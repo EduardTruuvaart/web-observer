@@ -21,15 +21,8 @@ func (t *TgCommandProcessor) processCommands(ctx context.Context, message *tgbot
 		_, _ = SendMsg(t.bot, chatID, "Hello there! Just send me full URL that you want to track.")
 
 	case "stop":
-		flowStep, savedUrl, _ := t.botFlowRepository.FindByChatID(ctx, chatID)
-
-		if flowStep != domain.NotStarted {
-			err = t.botFlowRepository.Delete(ctx, chatID)
-
-			if savedUrl != nil {
-				t.contentRepository.Delete(ctx, chatID, *savedUrl)
-			}
-		}
+		_ = t.botFlowRepository.Delete(ctx, chatID)
+		err = t.contentRepository.DeleteAll(ctx, chatID)
 		_, _ = SendMsg(t.bot, chatID, "Bye bye!")
 
 	default:

@@ -23,6 +23,7 @@ type ContentRepository interface {
 	UpdateWithData(ctx context.Context, chatID int64, url string, data []byte) error
 	UpdateWithSelectorAndActivate(ctx context.Context, chatID int64, cssSelector string, url string) error
 	Delete(ctx context.Context, chatID int64, url string) error
+	DeleteAll(ctx context.Context, chatID int64) error
 }
 
 type DynamoContentRepository struct {
@@ -210,4 +211,54 @@ func (r *DynamoContentRepository) Delete(ctx context.Context, chatID int64, url 
 	}
 
 	return nil
+}
+
+func (r *DynamoContentRepository) DeleteAll(ctx context.Context, chatID int64) error {
+
+	traces, err := r.findAllByChatID(ctx, chatID)
+	if err != nil {
+		fmt.Printf("Got error calling findAllByChatID: %s\n", err)
+		return err
+	}
+
+	for _, trace := range traces {
+		err = r.Delete(ctx, chatID, *trace.URL)
+
+		if err != nil {
+			fmt.Printf("Got error calling dynamodb Delete: %s\n", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *DynamoContentRepository) findAllByChatID(ctx context.Context, chatID int64) ([]domain.ObserverTrace, error) {
+	params := &dynamodb.QueryInput{
+		TableName:              aws.String(r.dynamoTableName),
+		IndexName:              aws.String("ChatID-index"),
+		KeyConditionExpression: aws.String("ChatID = :chatID"),
+		Limit:                  aws.Int32(100),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":chatID": &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
+		},
+	}
+
+	result, err := r.db.Query(ctx, params)
+
+	if err != nil {
+		return []domain.ObserverTrace{}, err
+	}
+
+	opt := func(opt *attributevalue.DecoderOptions) {
+		opt.TagKey = "json"
+	}
+	var recs *[]domain.ObserverTrace = &[]domain.ObserverTrace{}
+	err = attributevalue.UnmarshalListOfMapsWithOptions(result.Items, &recs, opt)
+
+	if err != nil {
+		return []domain.ObserverTrace{}, err
+	}
+
+	return *recs, nil
 }
