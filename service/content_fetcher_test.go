@@ -40,6 +40,10 @@ func (m *MockedContentRepository) Delete(ctx context.Context, chatID int64, url 
 	args := m.Called(ctx, chatID, url)
 	return args.Error(0)
 }
+func (m *MockedContentRepository) DeleteAll(ctx context.Context, chatID int64) error {
+	args := m.Called(ctx, chatID)
+	return args.Error(0)
+}
 
 func TestFetchAndCompareWithIdenticalStringsThenResultEqualsUnchanged(t *testing.T) {
 	// Arrange
