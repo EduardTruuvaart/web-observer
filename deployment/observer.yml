@@ -118,6 +118,18 @@ Resources:
           KeyType: HASH
         - AttributeName: ChatID
           KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: ChatID-index
+          KeySchema:
+            - AttributeName: ChatID
+              KeyType: HASH
+            - AttributeName: URL
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput: 
+            ReadCapacityUnits: "1"
+            WriteCapacityUnits: "1"
       BillingMode: PROVISIONED
       ProvisionedThroughput: 
         ReadCapacityUnits: "1"
