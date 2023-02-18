@@ -44,6 +44,10 @@ func (m *MockedContentRepository) DeleteAll(ctx context.Context, chatID int64) e
 	args := m.Called(ctx, chatID)
 	return args.Error(0)
 }
+func (m *MockedContentRepository) FindAllActive(ctx context.Context) ([]domain.ObserverTrace, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]domain.ObserverTrace), args.Error(1)
+}
 
 func TestFetchAndCompareWithIdenticalStringsThenResultEqualsUnchanged(t *testing.T) {
 	// Arrange
