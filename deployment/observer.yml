@@ -85,16 +85,16 @@ Resources:
             BucketName: !Ref BucketName
       Environment:
         Variables:
+          BUCKET_NAME: !Ref BucketName
           FLOW_TABLE_NAME: !Ref FlowDynamoTableName
           CONTENT_TABLE_NAME: !Ref ContentDynamoTableName
-          BUCKET_NAME: !Ref BucketName
           TELEGRAM_BOT_TOKEN: !Ref TelegramApiKey
       Events:
         ObserverSchedule:
           Type: ScheduleV2
           Properties:
             Description: Observer schedule
-            ScheduleExpression: rate(5 minutes)
+            ScheduleExpression: rate(1 minutes)
             ScheduleExpressionTimezone: Europe/London
             State: DISABLED
             Name: ObserverSchedule
