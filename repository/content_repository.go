@@ -65,7 +65,7 @@ func (r *DynamoContentRepository) FindByID(ctx context.Context, chatID int64, ur
 		return nil, nil
 	}
 
-	var content *domain.ObserverTrace = &domain.ObserverTrace{}
+	var content *ObserverTraceDto = &ObserverTraceDto{}
 	opt := func(opt *attributevalue.DecoderOptions) {
 		opt.TagKey = "json"
 	}
@@ -75,6 +75,7 @@ func (r *DynamoContentRepository) FindByID(ctx context.Context, chatID int64, ur
 		return nil, err
 	}
 
+	var bytesData []byte
 	if content.FileName != nil {
 		s3Result, err := r.s3Client.GetObject(ctx, &s3.GetObjectInput{
 			Bucket: aws.String(r.s3BucketName),
@@ -86,8 +87,7 @@ func (r *DynamoContentRepository) FindByID(ctx context.Context, chatID int64, ur
 			return nil, err
 		}
 
-		bytesData, err := ioutil.ReadAll(s3Result.Body)
-		content.Data = &bytesData
+		bytesData, err = ioutil.ReadAll(s3Result.Body)
 
 		if err != nil {
 			fmt.Printf("Got error reading bytes from s3 Body: %s\n", err)
@@ -95,7 +95,14 @@ func (r *DynamoContentRepository) FindByID(ctx context.Context, chatID int64, ur
 		}
 	}
 
-	return content, nil
+	return &domain.ObserverTrace{
+		ChatID:      content.ChatID,
+		URL:         content.URL,
+		FileName:    content.FileName,
+		CssSelector: content.CssSelector,
+		IsActive:    content.IsActive == "Y",
+		Data:        &bytesData,
+	}, nil
 }
 
 func (r *DynamoContentRepository) Create(ctx context.Context, chatID int64, url string) error {
@@ -134,14 +141,10 @@ func (r *DynamoContentRepository) UpdateWithData(ctx context.Context, chatID int
 			"ChatID": &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
 			"URL":    &types.AttributeValueMemberS{Value: url},
 		},
-		UpdateExpression: aws.String("SET #url = :url, FileName = :fileName, UpdatedDate = :updatedDate"),
+		UpdateExpression: aws.String("SET FileName = :fileName, UpdatedDate = :updatedDate"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":url":         &types.AttributeValueMemberS{Value: url},
 			":fileName":    &types.AttributeValueMemberS{Value: fileName},
 			":updatedDate": &types.AttributeValueMemberS{Value: formattedDate},
-		},
-		ExpressionAttributeNames: map[string]string{
-			"#url": "URL",
 		},
 		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,
 	}
@@ -242,7 +245,10 @@ func (r *DynamoContentRepository) FindAllActive(ctx context.Context) ([]domain.O
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":isActive": &types.AttributeValueMemberS{Value: "Y"},
 		},
-		ProjectionExpression: aws.String("ChatID, URL, CssSelector"),
+		ProjectionExpression: aws.String("ChatID, #url, CssSelector"),
+		ExpressionAttributeNames: map[string]string{
+			"#url": "URL",
+		},
 	}
 
 	result, err := r.db.Query(ctx, params)

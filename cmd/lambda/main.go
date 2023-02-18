@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/EduardTruuvaart/web-observer/domain"
 	"github.com/EduardTruuvaart/web-observer/repository"
@@ -17,6 +18,8 @@ import (
 )
 
 var contentRepository *repository.DynamoContentRepository
+var httpClient *http.Client
+var contentFetcher *service.ContentFetcher
 
 func init() {
 	cfg, err := config.LoadDefaultConfig(context.TODO())
@@ -27,7 +30,7 @@ func init() {
 
 	db := *dynamodb.NewFromConfig(cfg)
 	s3Client := *s3.NewFromConfig(cfg)
-	contentRepository = repository.NewDynamoContentRepository(db, s3Client, os.Getenv("TABLE_NAME"), os.Getenv("BUCKET_NAME"))
+	contentRepository = repository.NewDynamoContentRepository(db, s3Client, os.Getenv("CONTENT_TABLE_NAME"), os.Getenv("BUCKET_NAME"))
 }
 
 func main() {
@@ -35,23 +38,37 @@ func main() {
 }
 
 func handleRequest(ctx context.Context) error {
-	httpClient := &http.Client{}
-	contentFetcher := service.NewContentFetcher(contentRepository, httpClient)
+	httpClient = &http.Client{}
+	contentFetcher = service.NewContentFetcher(contentRepository, httpClient)
 
-	url := "https://eu.store.ui.com/collections/unifi-protect-cameras/products/g4-doorbell-pro"
-
-	result, err := contentFetcher.FetchAndCompare(ctx, 123, url, "div.comProduct__title-wrapper > div > span")
+	activeTracks, err := contentRepository.FindAllActive(ctx)
 
 	if err != nil {
 		log.Fatal(err)
 		return err
 	}
 
-	fmt.Printf("Result: %v\n", result.State)
-	if result.State == domain.Updated {
-		fmt.Printf("Diff size: %v\n", result.DiffSize)
-		fmt.Printf("Difference: %s\n", result.Difference)
-	}
+	var wg sync.WaitGroup
+	for _, track := range activeTracks {
+		wg.Add(1)
+		go func(track domain.ObserverTrace) {
+			defer wg.Done()
 
+			result, err := contentFetcher.FetchAndCompare(ctx, track.ChatID, *track.URL, *track.CssSelector)
+
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
+
+			if result.State == domain.Updated {
+				fmt.Printf("Diff size: %v\n", result.DiffSize)
+				fmt.Printf("Difference: %s\n", result.Difference)
+			}
+		}(track)
+	}
+	wg.Wait()
+
+	fmt.Printf("Completed checking %d records \n", len(activeTracks))
 	return nil
 }
