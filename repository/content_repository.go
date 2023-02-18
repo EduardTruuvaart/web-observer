@@ -24,6 +24,7 @@ type ContentRepository interface {
 	UpdateWithSelectorAndActivate(ctx context.Context, chatID int64, cssSelector string, url string) error
 	Delete(ctx context.Context, chatID int64, url string) error
 	DeleteAll(ctx context.Context, chatID int64) error
+	FindAllActive(ctx context.Context) ([]domain.ObserverTrace, error)
 }
 
 type DynamoContentRepository struct {
@@ -106,7 +107,7 @@ func (r *DynamoContentRepository) Create(ctx context.Context, chatID int64, url 
 		Item: map[string]types.AttributeValue{
 			"ChatID":      &types.AttributeValueMemberN{Value: strconv.FormatInt(chatID, 10)},
 			"URL":         &types.AttributeValueMemberS{Value: url},
-			"IsActive":    &types.AttributeValueMemberBOOL{Value: false},
+			"IsActive":    &types.AttributeValueMemberS{Value: "N"},
 			"CreatedDate": &types.AttributeValueMemberS{Value: formattedDate},
 		},
 		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,
@@ -180,7 +181,7 @@ func (r *DynamoContentRepository) UpdateWithSelectorAndActivate(ctx context.Cont
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":cssSelector": &types.AttributeValueMemberS{Value: cssSelector},
 			":updatedDate": &types.AttributeValueMemberS{Value: formattedDate},
-			":isActive":    &types.AttributeValueMemberBOOL{Value: true},
+			":isActive":    &types.AttributeValueMemberS{Value: "Y"},
 		},
 		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,
 	}
@@ -233,6 +234,49 @@ func (r *DynamoContentRepository) DeleteAll(ctx context.Context, chatID int64) e
 	return nil
 }
 
+func (r *DynamoContentRepository) FindAllActive(ctx context.Context) ([]domain.ObserverTrace, error) {
+	params := &dynamodb.QueryInput{
+		TableName:              aws.String(r.dynamoTableName),
+		IndexName:              aws.String("IsActive-index"),
+		KeyConditionExpression: aws.String("IsActive = :isActive"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":isActive": &types.AttributeValueMemberS{Value: "Y"},
+		},
+		ProjectionExpression: aws.String("ChatID, URL, CssSelector"),
+	}
+
+	result, err := r.db.Query(ctx, params)
+
+	if err != nil {
+		return []domain.ObserverTrace{}, err
+	}
+
+	opt := func(opt *attributevalue.DecoderOptions) {
+		opt.TagKey = "json"
+	}
+	var recs *[]ObserverTraceDto = &[]ObserverTraceDto{}
+	err = attributevalue.UnmarshalListOfMapsWithOptions(result.Items, recs, opt)
+	if err != nil {
+		return []domain.ObserverTrace{}, err
+	}
+
+	return r.mapToObserverTrace(*recs), nil
+}
+
+func (r *DynamoContentRepository) mapToObserverTrace(dtos []ObserverTraceDto) []domain.ObserverTrace {
+	returnValues := make([]domain.ObserverTrace, len(dtos))
+	for i, v := range dtos {
+		returnValues[i] = domain.ObserverTrace{
+			ChatID:      v.ChatID,
+			URL:         v.URL,
+			CssSelector: v.CssSelector,
+			IsActive:    v.IsActive == "Y",
+		}
+	}
+
+	return returnValues
+}
+
 func (r *DynamoContentRepository) findAllByChatID(ctx context.Context, chatID int64) ([]domain.ObserverTrace, error) {
 	params := &dynamodb.QueryInput{
 		TableName:              aws.String(r.dynamoTableName),
@@ -253,12 +297,12 @@ func (r *DynamoContentRepository) findAllByChatID(ctx context.Context, chatID in
 	opt := func(opt *attributevalue.DecoderOptions) {
 		opt.TagKey = "json"
 	}
-	var recs *[]domain.ObserverTrace = &[]domain.ObserverTrace{}
+	var recs *[]ObserverTraceDto = &[]ObserverTraceDto{}
 	err = attributevalue.UnmarshalListOfMapsWithOptions(result.Items, &recs, opt)
 
 	if err != nil {
 		return []domain.ObserverTrace{}, err
 	}
 
-	return *recs, nil
+	return r.mapToObserverTrace(*recs), nil
 }

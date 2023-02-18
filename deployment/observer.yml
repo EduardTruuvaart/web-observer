@@ -113,6 +113,8 @@ Resources:
           AttributeType: S
         - AttributeName: ChatID
           AttributeType: N
+        - AttributeName: IsActive
+          AttributeType: S
       KeySchema:
         - AttributeName: URL
           KeyType: HASH
@@ -124,6 +126,17 @@ Resources:
             - AttributeName: ChatID
               KeyType: HASH
             - AttributeName: URL
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput: 
+            ReadCapacityUnits: "1"
+            WriteCapacityUnits: "1"
+        - IndexName: IsActive-index
+          KeySchema:
+            - AttributeName: IsActive
+              KeyType: HASH
+            - AttributeName: ChatID
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
