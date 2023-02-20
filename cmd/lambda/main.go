@@ -61,6 +61,7 @@ func handleRequest(ctx context.Context) error {
 				return
 			}
 
+			fmt.Printf("ChatID: %d, URL: %s Diff Result: %v\n", track.ChatID, *track.URL, result.State)
 			if result.State == domain.Updated {
 				fmt.Printf("Diff size: %v\n", result.DiffSize)
 				fmt.Printf("Difference: %s\n", result.Difference)
