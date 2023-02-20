@@ -8,6 +8,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/EduardTruuvaart/web-observer/commands"
 	"github.com/EduardTruuvaart/web-observer/domain"
 	"github.com/EduardTruuvaart/web-observer/repository"
 	"github.com/EduardTruuvaart/web-observer/service"
@@ -15,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 var contentRepository *repository.DynamoContentRepository
@@ -41,6 +43,12 @@ func handleRequest(ctx context.Context) error {
 	httpClient = &http.Client{}
 	contentFetcher = service.NewContentFetcher(contentRepository, httpClient)
 
+	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_BOT_TOKEN"))
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
 	activeTracks, err := contentRepository.FindAllActive(ctx)
 
 	if err != nil {
@@ -63,6 +71,9 @@ func handleRequest(ctx context.Context) error {
 
 			fmt.Printf("ChatID: %d, URL: %s Diff Result: %v\n", track.ChatID, *track.URL, result.State)
 			if result.State == domain.Updated {
+				msg := fmt.Sprintf("❗️ URL %v has changed", *track.URL)
+				commands.SendMsg(bot, track.ChatID, msg)
+
 				fmt.Printf("Diff size: %v\n", result.DiffSize)
 				fmt.Printf("Difference: %s\n", result.Difference)
 			}
