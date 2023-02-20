@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/EduardTruuvaart/web-observer/domain"
 	"github.com/EduardTruuvaart/web-observer/repository"
@@ -29,17 +30,30 @@ func main() {
 	contentRepository := repository.NewDynamoContentRepository(db, s3Client, "ObserverTraces", "web-observer-bucket")
 	contentFetcher := service.NewContentFetcher(contentRepository, httpClient)
 
-	url := "https://eu.store.ui.com/collections/unifi-protect-cameras/products/g4-doorbell-pro"
-
-	result, err := contentFetcher.FetchAndCompare(ctx, 123, url, "div.comProduct__title--wrapper > div > span")
+	activeTracks, err := contentRepository.FindAllActive(ctx)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Result: %v\n", result.State)
-	if result.State == domain.Updated {
-		fmt.Printf("Diff size: %v\n", result.DiffSize)
-		fmt.Printf("Difference: %s\n", result.Difference)
+	var wg sync.WaitGroup
+	for _, track := range activeTracks {
+		wg.Add(1)
+		go func(track domain.ObserverTrace) {
+			defer wg.Done()
+
+			result, err := contentFetcher.FetchAndCompare(ctx, track.ChatID, *track.URL, *track.CssSelector)
+
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
+
+			if result.State == domain.Updated {
+				fmt.Printf("Diff size: %v\n", result.DiffSize)
+				fmt.Printf("Difference: %s\n", result.Difference)
+			}
+		}(track)
 	}
+	wg.Wait()
 }
