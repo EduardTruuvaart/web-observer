@@ -96,10 +96,59 @@ Resources:
             Description: Observer schedule
             ScheduleExpression: rate(1 minutes)
             ScheduleExpressionTimezone: Europe/London
-            State: DISABLED
+            State: ENABLED
             Name: ObserverSchedule
     DependsOn:
       - WebObserverTrackerLogs
+
+##########################################################################
+#   SQS Queues AND Scheduling                                            #
+##########################################################################
+  SQSRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: observer-trigger-sqs-role
+      AssumeRolePolicyDocument: 
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: 
+                - scheduler.amazonaws.com
+            Action: 
+              - sts:AssumeRole
+      Path: '/'
+      Policies:
+        - PolicyName: observer-trigger-sqs-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource:
+                  - !GetAtt ObserverTriggerQueue.Arn
+
+  ObserverTriggerQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub observer-trigger-sqs-${AWS::StackName}
+  
+  MySchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: my-schedule-name
+      Description: Sends a message to the queue every day at 9:00 AM
+      ScheduleExpression: cron(* * * * ? *)
+      ScheduleExpressionTimezone: Europe/London
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      State: ENABLED
+      Target:
+        Arn: !GetAtt ObserverTriggerQueue.Arn
+        RoleArn: !GetAtt SQSRole.Arn
+        Input: '{"message": "Hello, world!"}'
 
 ##########################################################################
 #   DynamoDb Tables                                                      #
