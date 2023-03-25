@@ -90,16 +90,120 @@ Resources:
           CONTENT_TABLE_NAME: !Ref ContentDynamoTableName
           TELEGRAM_BOT_TOKEN: !Ref TelegramApiKey
       Events:
-        ObserverSchedule:
-          Type: ScheduleV2
+        SQSEvent:
+          Type: SQS
           Properties:
-            Description: Observer schedule
-            ScheduleExpression: rate(1 minutes)
-            ScheduleExpressionTimezone: Europe/London
-            State: DISABLED
-            Name: ObserverSchedule
+            Queue: !GetAtt ObserverTriggerQueue.Arn
+            BatchSize: 1
+            Enabled: true
+        20sDelaySQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt 20sDelayTriggerQueue.Arn
+            BatchSize: 1
+            Enabled: true
+        40sDelaySQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt 40sDelayTriggerQueue.Arn
+            BatchSize: 1
+            Enabled: true
     DependsOn:
       - WebObserverTrackerLogs
+
+##########################################################################
+#   SQS Queues AND Scheduling                                            #
+##########################################################################
+  SQSPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - Ref: ObserverTriggerQueue
+        - Ref: 20sDelayTriggerQueue
+        - Ref: 40sDelayTriggerQueue
+      PolicyDocument:
+        Version: "2012-10-17"
+        Id: SchedulerSQSPolicy
+        Statement:
+          - Sid: PerMinuteAllowEventBridge
+            Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Principal:
+              Service: events.amazonaws.com
+            Resource:
+              Fn::GetAtt:
+                - ObserverTriggerQueue
+                - Arn
+            Condition:
+              ArnEquals: 
+                "aws:SourceArn": !GetAtt PerMinuteSchedule.Arn
+          - Sid: DelayAllowEventBridge
+            Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Principal:
+              Service: events.amazonaws.com
+            Resource:
+              Fn::GetAtt:
+                - 20sDelayTriggerQueue
+                - Arn
+            Condition:
+              ArnEquals: 
+                "aws:SourceArn": !GetAtt PerMinuteSchedule.Arn
+          - Sid: 40DelayAllowEventBridge
+            Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Principal:
+              Service: events.amazonaws.com
+            Resource:
+              Fn::GetAtt:
+                - 40sDelayTriggerQueue
+                - Arn
+            Condition:
+              ArnEquals: 
+                "aws:SourceArn": !GetAtt PerMinuteSchedule.Arn
+
+  ObserverTriggerQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub observer-trigger-sqs
+      MessageRetentionPeriod: 120
+      VisibilityTimeout: 900
+  
+  20sDelayTriggerQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub 20sDelay-trigger-sqs
+      MessageRetentionPeriod: 120
+      VisibilityTimeout: 900
+      DelaySeconds: 20
+
+  40sDelayTriggerQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub 40sDelay-trigger-sqs
+      MessageRetentionPeriod: 120
+      VisibilityTimeout: 900
+      DelaySeconds: 40
+  
+  PerMinuteSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: observer-schedule-per-minute
+      Description: Sends a message to the queue every minute
+      ScheduleExpression: "cron(* * * * ? *)"
+      Targets:
+        - Arn: !GetAtt ObserverTriggerQueue.Arn
+          Id: my-target-id
+          Input: '{"message": "Run it"}'
+        # - Arn: !GetAtt 20sDelayTriggerQueue.Arn
+        #   Id: my-target-id-2
+        #   Input: '{"message": "Run it"}'
+        # - Arn: !GetAtt 40sDelayTriggerQueue.Arn
+        #   Id: my-target-id-3
+        #   Input: '{"message": "Run it"}'
 
 ##########################################################################
 #   DynamoDb Tables                                                      #
@@ -164,7 +268,7 @@ Resources:
         WriteCapacityUnits: "1"
 
 ##########################################################################
-#   S3 Bucket                                                      #
+#   S3 Bucket                                                            #
 ##########################################################################
   InputBucket:
     Type: AWS::S3::Bucket
