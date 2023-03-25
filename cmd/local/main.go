@@ -5,17 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"sync"
 
-	"github.com/EduardTruuvaart/web-observer/commands"
-	"github.com/EduardTruuvaart/web-observer/domain"
 	"github.com/EduardTruuvaart/web-observer/repository"
 	"github.com/EduardTruuvaart/web-observer/service"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 func main() {
@@ -27,40 +22,50 @@ func main() {
 		log.Fatal(err)
 	}
 
-	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_BOT_TOKEN"))
+	//bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_BOT_TOKEN"))
 	db := *dynamodb.NewFromConfig(cfg)
 	s3Client := *s3.NewFromConfig(cfg)
 	httpClient := &http.Client{}
 	contentRepository := repository.NewDynamoContentRepository(db, s3Client, "ObserverTraces", "web-observer-bucket")
 	contentFetcher := service.NewContentFetcher(contentRepository, httpClient)
 
-	activeTracks, err := contentRepository.FindAllActive(ctx)
+	result, err := contentFetcher.FetchAndCompare(ctx, 493004756, "https://eu.store.ui.com/products/dream-wall-ea",
+		"div.grid.comProduct > div.grid__item.one-half.medium-down--one-whole.add16bottom > div.bundleApp > div.flexslider > div.bundle-viewport > ul.relatedProducts.bundleSlider.slides > li.relatedProducts__bundle > div.relatedProducts__bundle__items")
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var wg sync.WaitGroup
-	for _, track := range activeTracks {
-		wg.Add(1)
-		go func(track domain.ObserverTrace) {
-			defer wg.Done()
+	fmt.Printf("Result: %s\n", result.State)
+	fmt.Printf("Diff: %s\n", result.Difference)
 
-			result, err := contentFetcher.FetchAndCompare(ctx, track.ChatID, *track.URL, *track.CssSelector)
+	//activeTracks, err := contentRepository.FindAllActive(ctx)
 
-			if err != nil {
-				log.Fatal(err)
-				return
-			}
-
-			msg := fmt.Sprintf("❗️ URL %v has changed", *track.URL)
-			commands.SendMsg(bot, track.ChatID, msg)
-
-			if result.State == domain.Updated {
-				fmt.Printf("Diff size: %v\n", result.DiffSize)
-				fmt.Printf("Difference: %s\n", result.Difference)
-			}
-		}(track)
+	if err != nil {
+		log.Fatal(err)
 	}
-	wg.Wait()
+
+	// var wg sync.WaitGroup
+	// for _, track := range activeTracks {
+	// 	wg.Add(1)
+	// 	go func(track domain.ObserverTrace) {
+	// 		defer wg.Done()
+
+	// 		result, err := contentFetcher.FetchAndCompare(ctx, track.ChatID, *track.URL, *track.CssSelector)
+
+	// 		if err != nil {
+	// 			log.Fatal(err)
+	// 			return
+	// 		}
+
+	// 		msg := fmt.Sprintf("❗️ URL %v has changed", *track.URL)
+	// 		commands.SendMsg(bot, track.ChatID, msg)
+
+	// 		if result.State == domain.Updated {
+	// 			fmt.Printf("Diff size: %v\n", result.DiffSize)
+	// 			fmt.Printf("Difference: %s\n", result.Difference)
+	// 		}
+	// 	}(track)
+	// }
+	// wg.Wait()
 }
