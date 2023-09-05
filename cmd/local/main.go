@@ -37,7 +37,7 @@ func main() {
 	contentFetcher := service.NewContentFetcher(contentRepository, httpClient)
 
 	result, err := contentFetcher.FetchAndCompare(ctx, 493004756, "https://www.johnlewis.com/miele-pur68w-chimney-cooker-hood-stainless-steel/p3095618",
-		"div.StockInformation_stock__slmjt")
+		"div.Layout_Row__ev3af")
 
 	if err != nil {
 		log.Fatal(err)
