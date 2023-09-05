@@ -25,12 +25,19 @@ func main() {
 	//bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_BOT_TOKEN"))
 	db := *dynamodb.NewFromConfig(cfg)
 	s3Client := *s3.NewFromConfig(cfg)
-	httpClient := &http.Client{}
+
+	//proxyUrl, _ := url.Parse("http://localhost:8081")
+	httpClient := &http.Client{
+		// Transport: &http.Transport{
+		// 	Proxy:           http.ProxyURL(proxyUrl),
+		// 	TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		// },
+	}
 	contentRepository := repository.NewDynamoContentRepository(db, s3Client, "ObserverTraces", "web-observer-bucket")
 	contentFetcher := service.NewContentFetcher(contentRepository, httpClient)
 
-	result, err := contentFetcher.FetchAndCompare(ctx, 493004756, "https://eu.store.ui.com/products/dream-wall-ea",
-		"div.grid.comProduct > div.grid__item.one-half.medium-down--one-whole.add16bottom > div.bundleApp > div.flexslider > div.bundle-viewport > ul.relatedProducts.bundleSlider.slides > li.relatedProducts__bundle > div.relatedProducts__bundle__items")
+	result, err := contentFetcher.FetchAndCompare(ctx, 493004756, "https://www.johnlewis.com/miele-pur68w-chimney-cooker-hood-stainless-steel/p3095618",
+		"div.StockInformation_stock__slmjt")
 
 	if err != nil {
 		log.Fatal(err)

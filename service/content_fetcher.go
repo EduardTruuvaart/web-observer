@@ -26,6 +26,7 @@ func NewContentFetcher(contentRepository repository.ContentRepository, httpClien
 
 func (c *ContentFetcher) FetchAndCompare(ctx context.Context, chatID int64, url string, cssSelector string) (domain.FetchResult, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")
 
 	if err != nil {
 		return domain.FetchResult{}, err
