@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/EduardTruuvaart/web-observer/domain"
@@ -26,7 +26,9 @@ func NewContentFetcher(contentRepository repository.ContentRepository, httpClien
 
 func (c *ContentFetcher) FetchAndCompare(ctx context.Context, chatID int64, url string, cssSelector string) (domain.FetchResult, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")
+	req.Header.Set("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")
+	req.Header.Set("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
+	req.Header.Set("accept-language", "en-GB,en;q=0.9,ru;q=0.8")
 
 	if err != nil {
 		return domain.FetchResult{}, err
@@ -41,8 +43,10 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, chatID int64, url 
 
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	data := string(body)
+
+	//log.Printf("Response: %s\n", body)
 
 	if err != nil {
 		fmt.Printf("Got error calling ioutil.ReadAll: %s\n", err)
