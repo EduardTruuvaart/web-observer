@@ -8,6 +8,10 @@ on:
     branches:
       - "master"
       - "feature/*"
+      - "feat/*"
+      - "bugfix/*"
+      - "hotfix/*"
+      - "fix/*"
   pull_request:
     branches:
       - "master"
