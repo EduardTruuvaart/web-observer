@@ -45,16 +45,3 @@ jobs:
 
     - name: Unit Tests
       run: make test
-
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-    steps:
-    - name: Restore checkout
-      uses: actions/download-artifact@v4
-      with:
-        name: checked-out-code
-
-    - name: Deploy
-      run: make deploy
