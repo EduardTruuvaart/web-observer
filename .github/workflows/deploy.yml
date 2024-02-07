@@ -41,4 +41,6 @@ jobs:
     - name: Deploy
       env:
         TELEGRAMAPIKEY: ${{ secrets.TELEGRAMAPIKEY }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: sam deploy --no-confirm-changeset --capabilities CAPABILITY_NAMED_IAM --region eu-west-1 --stack-name web-observer-dev --s3-bucket aws-sam-observer-deployment --template-file ./deployment/observer.yml --parameter-overrides ParameterKey=TelegramApiKey,ParameterValue=$TELEGRAMAPIKEY
