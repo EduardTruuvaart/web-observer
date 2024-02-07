@@ -12,9 +12,6 @@ on:
       - "bugfix/*"
       - "hotfix/*"
       - "fix/*"
-  pull_request:
-    branches:
-      - "master"
   workflow_dispatch:
 
 jobs:
