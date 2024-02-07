@@ -38,10 +38,7 @@ jobs:
       with:
         name: checked-out-code
 
-    - name: Test Vars
-      run: echo "MY_VARIABLE is ${{ secrets.TELEGRAMAPIKEY }}"
-
-    # - name: Deploy
-    #   env:
-    #     MY_VARIABLE: ${{ secrets.TELEGRAMAPIKEY }}
-    #   run: sam deploy --no-confirm-changeset --capabilities CAPABILITY_NAMED_IAM --region eu-west-1 --stack-name web-observer-dev --s3-bucket aws-sam-observer-deployment --template-file ./deployment/observer.yml --parameter-overrides ParameterKey=TelegramApiKey,ParameterValue=$TELEGRAMAPIKEY
+    - name: Deploy
+      env:
+        TELEGRAMAPIKEY: ${{ secrets.TELEGRAMAPIKEY }}
+      run: sam deploy --no-confirm-changeset --capabilities CAPABILITY_NAMED_IAM --region eu-west-1 --stack-name web-observer-dev --s3-bucket aws-sam-observer-deployment --template-file ./deployment/observer.yml --parameter-overrides ParameterKey=TelegramApiKey,ParameterValue=$TELEGRAMAPIKEY
