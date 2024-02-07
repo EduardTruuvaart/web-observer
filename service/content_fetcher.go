@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/EduardTruuvaart/web-observer/domain"
@@ -45,8 +46,6 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, chatID int64, url 
 
 	body, err := io.ReadAll(resp.Body)
 	data := string(body)
-
-	//log.Printf("Response: %s\n", body)
 
 	if err != nil {
 		fmt.Printf("Got error calling ioutil.ReadAll: %s\n", err)
@@ -99,6 +98,8 @@ func (c *ContentFetcher) FetchAndCompare(ctx context.Context, chatID int64, url 
 	if result.State == htmlcompareresult.Different {
 		for _, diff := range result.Differences {
 			diffString += fmt.Sprintf("%s\n", diff)
+
+			log.Printf("Body Response: %s\n", body)
 		}
 	}
 
